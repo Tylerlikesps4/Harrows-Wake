@@ -1,0 +1,66 @@
+name: Build Harrow's Wake
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.3"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Godot templates and Android debug key
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates ~/.config
+          cp -r /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/ || true
+          cp -r /root/.config/godot ~/.config/godot || true
+          keytool -genkeypair -v -keystore "$GITHUB_WORKSPACE/../debug.keystore" -storepass android -alias androiddebugkey \
+            -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$(readlink -f $GITHUB_WORKSPACE/../debug.keystore)" >> $GITHUB_ENV
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> $GITHUB_ENV
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> $GITHUB_ENV
+
+      - name: Import project
+        run: timeout 180 godot --headless --editor --quit || true
+
+      - name: Smoke test (automated playthrough)
+        continue-on-error: true
+        run: |
+          timeout 300 godot --headless -- --smoke 2>&1 | tee smoke.log || true
+          grep -E "^(PASS|FAIL)" smoke.log
+          ! grep -q "^FAIL" smoke.log
+
+      - name: Export Windows
+        run: |
+          mkdir -p out
+          godot --headless --export-release "Windows Desktop" "$PWD/out/HarrowsWake.exe"
+
+      - name: Export Android APK
+        run: |
+          godot --headless --export-debug "Android" "$PWD/out/HarrowsWake.apk"
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HarrowsWake-builds
+          path: out/
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Harrow's Wake build ${{ github.run_number }}
+          body: Automatic build of the vertical slice. On Android, download HarrowsWake.apk and allow installs from your browser. On Windows, run HarrowsWake.exe.
+          files: |
+            out/HarrowsWake.apk
+            out/HarrowsWake.exe

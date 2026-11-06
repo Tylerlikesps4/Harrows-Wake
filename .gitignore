@@ -3,3 +3,6 @@ build/
 *.apk
 *.exe
 *.keystore
+bin/
+obj/
+.vs/

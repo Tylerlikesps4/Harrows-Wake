@@ -7,7 +7,7 @@ This is the **free, open-source demo**: one complete chapter (about 15-25 minute
 ## Play
 - **Android:** grab `HarrowsWake.apk` from the newest Release, open it, and allow installs from your browser when asked. On-screen controls appear automatically; a Bluetooth controller works too. The picture fills wide phone screens (no black bars).
 - **Windows:** run `HarrowsWake.exe` (if SmartScreen warns, click More info, then Run anyway; it's unsigned).
-- **Edit / other OS:** install Godot 4.3+ (godotengine.org), Import, pick `project.godot`, press F5.
+- **Edit / other OS:** see "Build from source" below (needs the Godot 4.3 .NET edition).
 - Headphones recommended: the Bellman's bell and footsteps are positional, so you hear which way he's coming from.
 
 ## Controls
@@ -64,23 +64,33 @@ Bug reports and pull requests are welcome. Keep the PSX look, keep `godot --head
 **Contributor agreement:** by submitting a contribution you agree that it is licensed to the project under the GPL v3 *and* that Tylerlikesps4 may relicense it under other terms (including in the commercial full game).
 
 ## Build from source
-1. Install **Godot 4.3** (godotengine.org/download/archive/4.3-stable).
-2. Clone this repo, open Godot, **Import**, pick `project.godot`, press **F5**.
+The project mixes **C#** and **GDScript**, so it needs the **Godot 4.3 .NET edition** (the plain build can't run the C# parts).
+1. Install **Godot 4.3 .NET** (godotengine.org/download/archive/4.3-stable, the ".NET" download) and the **.NET 8 SDK** (dotnet.microsoft.com).
+2. Clone this repo and run `dotnet build HarrowsWake.sln` once (or press Build in the editor).
+3. Open Godot, **Import**, pick `project.godot`, press **F5**.
 3. Tests: `godot --headless -- --smoke` (automated playthrough) and `godot --headless -- --flow` (title/settings/pause/hiding). Screenshots: `xvfb-run -s "-screen 0 1280x960x24" godot -- --shots`.
-4. Export: install the 4.3 export templates (Editor > Manage Export Templates), then Project > Export > Windows Desktop or Android. Android needs the Android SDK + a debug keystore set in Editor Settings.
+4. Export: install the 4.3 **.NET (mono)** export templates (Editor > Manage Export Templates), then Project > Export > Windows Desktop or Android. Android needs the Android SDK + a debug keystore set in Editor Settings.
 
 ## Install the APK
 On your Android phone, open the newest [Release](https://github.com/Tylerlikesps4/Harrows-Wake/releases/latest), download `HarrowsWake.apk`, open it, and allow installs from your browser when asked (Settings > Apps > your browser > Install unknown apps). It's an arm64 debug-signed build; uninstall the old version first if Android refuses to update it.
 
 ## Code map
+**C# (`csharp/`, project `HarrowsWake.csproj` / `HarrowsWake.sln`, Godot.NET.Sdk 4.3.0, net8.0):**
+- `GameState.cs`: the `Game` autoload: game state, item/flag helpers, save/load (`user://harrows_wake_save.json`), settings (`user://settings.cfg`), audio buses, input map, device glyphs
+- `Bellman.cs`: the Bellman stalker AI (sight, hearing, telegraph, chase, search, hide check, stun)
+- `WaypointGraph.cs`: room-graph BFS pathfinding used by both enemies
+
+C# members use snake_case names on purpose, so GDScript calls them directly (`Game.flag("power")`, `Game.state["inv"]`, `bellman.state == bellman.S.CHASE`); C# calls back into GDScript with `Call`/`Get`.
+
+**GDScript (`scripts/`, `tests/`):**
 - `scripts/main.gd`: level build, lighting, cameras, interactions, menus, title, tubes, panic, scripted scares, saves
 - `scripts/actor_model.gd`: animated character models (clothing bake, animation, interpolation)
 - `scripts/lib.gd`: PSX materials and prop placement
-- `scripts/player.gd`, `bellman.gd`, `zombie.gd`: actors. `touch.gd`: floating stick + buttons. `hud.gd`: HUD. `game.gd`: state, input map, glyphs, saves
+- `scripts/player.gd`, `zombie.gd`: survivors and the Tallow-folk. `touch.gd`: floating stick + buttons. `hud.gd`: HUD
 - `scripts/synth.gd`: the two synthesised sounds (phone ring, music box). `shaders/`: PSX surface and post shaders
 - `tests/smoke.gd`: automated playthrough (`godot --headless -- --smoke`); `tests/flow.gd`: title/intro/pause/flashlight/hiding (`godot --headless -- --flow`); `tests/shots.gd`: screenshot tour (`xvfb-run godot -- --shots`)
 
 Full game (from the GDD): Elias and the cryo lab, the Otherworld bell shift, the raptor rift, more endings.
 
 ## Builds
-Every push to `main` runs GitHub Actions: the automated playthrough and flow test, then a Windows .exe and an Android APK (debug-signed, arm64), published as a Release.
+Every push to `main` runs GitHub Actions on the Godot 4.3 .NET image: `dotnet build`, the automated playthrough and flow test, then a Windows .exe and an Android APK (debug-signed, arm64), published as a Release. (C# on Android is marked experimental by Godot 4.3.)

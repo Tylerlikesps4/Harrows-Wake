@@ -1,0 +1,10 @@
+<Project Sdk="Godot.NET.Sdk/4.3.0">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>HarrowsWake</RootNamespace>
+    <Nullable>disable</Nullable>
+    <!-- Keep the GDScript side callable: C# members use snake_case names on purpose. -->
+    <NoWarn>$(NoWarn);IDE1006;CS8981</NoWarn>
+  </PropertyGroup>
+</Project>

@@ -42,6 +42,7 @@ func _process(_d: float) -> void:
 	f += 1
 	match f:
 		3:
+			ok(str(Game.get_script().resource_path).ends_with("GameState.cs") and str(m.bellman.get_script().resource_path).ends_with("Bellman.cs") and str(m.graph.get_script().resource_path).ends_with("WaypointGraph.cs"), "C# systems loaded (Game autoload, Bellman AI, waypoint graph)")
 			ok(m.current_objective().contains("Playroom"), "Objective reminder at start: " + m.current_objective())
 			# Settings: change brightness, check it reaches the shader and user://settings.cfg.
 			var old_b: float = Game.settings["brightness"]

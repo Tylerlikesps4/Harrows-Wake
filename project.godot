@@ -7,11 +7,15 @@ config/name="Harrow's Wake"
 config/description="PS1-style survival horror - free demo"
 run/main_scene="res://scenes/main.tscn"
 config/icon="res://icon.svg"
-config/features=PackedStringArray("4.3", "GL Compatibility")
+config/features=PackedStringArray("4.3", "C#", "GL Compatibility")
 
 [autoload]
 
-Game="*res://scripts/game.gd"
+Game="*res://csharp/GameState.cs"
+
+[dotnet]
+
+project/assembly_name="HarrowsWake"
 
 [display]
 

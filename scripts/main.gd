@@ -11,7 +11,8 @@ const DOOR_H := 2.2
 const POST_SHADER := preload("res://shaders/psx_post.gdshader")
 const PlayerScript := preload("res://scripts/player.gd")
 const ZombieScript := preload("res://scripts/zombie.gd")
-const BellmanScript := preload("res://scripts/bellman.gd")
+const BellmanScript := preload("res://csharp/Bellman.cs")
+const GraphScript := preload("res://csharp/WaypointGraph.cs")
 const HudScript := preload("res://scripts/hud.gd")
 const TouchScript := preload("res://scripts/touch.gd")
 const ActorScript := preload("res://scripts/actor_model.gd")
@@ -128,8 +129,13 @@ const ITEM_INFO := {
 }
 
 
+var graph: RefCounted = null   # C# WaypointGraph (csharp/WaypointGraph.cs)
+
+
 func _ready() -> void:
 	randomize()
+	graph = GraphScript.new()
+	graph.setup(MAPS, CELL)
 	_build_sfx()
 	_build_environment()
 	for m in MAPS.keys():
@@ -711,8 +717,7 @@ func _build_enemies() -> void:
 	if Game.flag("tallow1_dead"):
 		z.die()
 
-	var b := CharacterBody3D.new()
-	b.set_script(BellmanScript)
+	var b: CharacterBody3D = BellmanScript.new()   # C# (csharp/Bellman.cs)
 	b.main = self
 	b.collision_layer = 8
 	b.collision_mask = 1 | 4
@@ -857,39 +862,9 @@ func make_noise(pos: Vector3, radius: float) -> void:
 		bellman.hear(pos, radius)
 
 
+## Room-graph pathfinding lives in C# (WaypointGraph.cs); used by both enemies.
 func next_waypoint(map: String, from: Vector3, to: Vector3, blocked: Array) -> Vector3:
-	var rooms: Dictionary = MAPS[map]["rooms"]
-	var a := cell_of(map, from)
-	var b := cell_of(map, to)
-	if a == b or not rooms.has(a) or not rooms.has(b):
-		return to
-	var prev := {a: a}
-	var q: Array = [a]
-	while not q.is_empty():
-		var c: Vector2i = q.pop_front()
-		if c == b:
-			break
-		for l in MAPS[map]["links"]:
-			if l[2] != "" and not Game.flag("door_" + l[2]):
-				continue
-			var n := Vector2i(9999, 9999)
-			if l[0] == c:
-				n = l[1]
-			elif l[1] == c:
-				n = l[0]
-			if n.x == 9999 or prev.has(n) or blocked.has(n):
-				continue
-			prev[n] = c
-			q.append(n)
-	if not prev.has(b):
-		return from
-	var step: Vector2i = b
-	while prev[step] != a:
-		step = prev[step]
-	var door := (cell_center(map, a) + cell_center(map, step)) / 2.0
-	if Vector2(door.x - from.x, door.z - from.z).length() < 0.9:
-		return cell_center(map, step)
-	return door
+	return graph.next_waypoint(map, from, to, blocked)
 
 
 func find_aim_target(p):
@@ -1951,7 +1926,7 @@ func _process(delta: float) -> void:
 		"play":
 			_play_process(delta)
 	_intro_process(delta)
-	var in_title := Game.mode == "title" or (Game.mode == "menu" and settings_from_title)
+	var in_title: bool = Game.mode == "title" or (Game.mode == "menu" and settings_from_title)
 	if not in_title:
 		_update_camera()
 	_update_audio_and_fx(delta)
@@ -2078,7 +2053,7 @@ func _update_audio_and_fx(delta: float) -> void:
 	distort = move_toward(distort, 0.0, delta * 1.2)
 	post_mat.set_shader_parameter("distort", distort)
 	# Music & ambience mix.
-	var is_title := Game.mode == "title" or (Game.mode == "menu" and settings_from_title)
+	var is_title: bool = Game.mode == "title" or (Game.mode == "menu" and settings_from_title)
 	if Game.mode != "endcard":
 		title_music.volume_db = lerpf(title_music.volume_db, -10.0 if is_title else -80.0, minf(1.0, delta * 1.5))
 	var rain: AudioStreamPlayer = get_node("rain")
@@ -2086,7 +2061,7 @@ func _update_audio_and_fx(delta: float) -> void:
 	amb_player.volume_db = lerpf(amb_player.volume_db, -80.0 if is_title else -12.0, minf(1.0, delta * 1.0))
 	amb2_player.volume_db = -80.0
 	# Radio static near monsters (Dana's police radio).
-	var target_db := -80.0 if Game.mode != "note" else static_player.volume_db
+	var target_db: float = -80.0 if Game.mode != "note" else static_player.volume_db
 	if who == "dana" and Game.mode == "play":
 		for z in zombies:
 			if z.dead:

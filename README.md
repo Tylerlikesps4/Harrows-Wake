@@ -58,6 +58,13 @@ If he grabs you, mash A / E. The higher your Panic, the harder it gets. In a war
 - **Assets** keep their own licenses: every third-party model, texture and sound is CC0. See [CREDITS.md](CREDITS.md).
 - The **"Harrow's Wake" name and logo are not licensed for reuse.** Forks must use a different name.
 
+### Project scope: open demo, proprietary full game
+This repository holds the open-source **demo** of Harrow's Wake. The **full game ($5.99) is a separate, proprietary commercial project** by Tylerlikesps4, released under its own EULA.
+- **Open source (here):** the core mechanics, systems and demo content in this repository.
+- **Proprietary (not here):** additional chapters and levels, story, art, audio and premium mechanics made for the full release.
+
+Because Tylerlikesps4 is the sole copyright owner, the same core can be offered under the GPL here and under commercial terms in the full game (dual licensing).
+
 ## Contributing
 Bug reports and pull requests are welcome. Keep the PSX look, keep `godot --headless -- --smoke` and `-- --flow` passing, and only add assets that are CC0 (credit them in CREDITS.md).
 

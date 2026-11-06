@@ -40,6 +40,13 @@ jobs:
           grep -E "^(PASS|FAIL)" smoke.log
           ! grep -q "^FAIL" smoke.log
 
+      - name: Flow test (title, intro, pause, flashlight, hiding)
+        continue-on-error: true
+        run: |
+          timeout 120 godot --headless -- --flow 2>&1 | tee flow.log || true
+          grep -E "^(PASS|FAIL)" flow.log
+          ! grep -q "^FAIL" flow.log
+
       - name: Export Windows
         run: |
           mkdir -p out

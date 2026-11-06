@@ -7,11 +7,36 @@ var state: Dictionary = {}
 var mode: String = "title"   # title, play, note, menu, struggle, dead, win
 var tank_controls: bool = true
 var skip_title: bool = false
+var input_kind: String = "keyboard"   # keyboard, gamepad, touch
+var crt_on: bool = true
 
 
 func _ready() -> void:
 	_setup_input()
+	# Phones: camera-relative movement by default (tank controls are F1 / pause menu).
+	if DisplayServer.is_touchscreen_available():
+		tank_controls = false
+		input_kind = "touch"
 	new_game()
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		input_kind = "touch"
+	elif event is InputEventJoypadButton or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.4):
+		input_kind = "gamepad"
+	elif event is InputEventKey or event is InputEventMouseButton:
+		input_kind = "keyboard"
+
+
+## Button name for prompts, matching the device the player is using right now.
+func glyph(action: String) -> String:
+	var t := {
+		"keyboard": {"interact": "[E]", "run": "[Shift]", "aim": "[K]", "fire": "[J]", "quick_turn": "[Q]", "inventory": "[Tab]", "cancel": "[Esc]", "flashlight": "[F]", "pause": "[Esc]", "breath": "[Shift]"},
+		"gamepad": {"interact": "(A)", "run": "(B)", "aim": "(RB)", "fire": "(X)", "quick_turn": "(Y)", "inventory": "(Back)", "cancel": "(Back)", "flashlight": "(LB)", "pause": "(Start)", "breath": "(B)"},
+		"touch": {"interact": "Tap A", "run": "Hold RUN", "aim": "Hold AIM", "fire": "Tap FIRE", "quick_turn": "Tap TURN", "inventory": "Tap ITEMS", "cancel": "Tap BACK", "flashlight": "Tap LIGHT", "pause": "Tap II", "breath": "Hold RUN"},
+	}
+	return t.get(input_kind, t["keyboard"]).get(action, action)
 
 
 func new_game() -> void:
@@ -24,6 +49,7 @@ func new_game() -> void:
 		"pos": {"dana": [], "jenny": []},
 		"rot": {"dana": 0.0, "jenny": 0.0},
 		"flags": {},
+		"light": {"dana": false, "jenny": false},
 		"saves": 0,
 		"time": 0.0,
 	}
@@ -124,6 +150,8 @@ func _setup_input() -> void:
 	_add_key("quick_turn", [KEY_Q])
 	_add_key("inventory", [KEY_TAB, KEY_I])
 	_add_key("cancel", [KEY_ESCAPE, KEY_BACKSPACE])
+	_add_key("pause", [KEY_ESCAPE, KEY_P])
+	_add_key("flashlight", [KEY_F])
 	_add_key("toggle_controls", [KEY_F1])
 	_add_key("toggle_crt", [KEY_F2])
 	_add_key("continue_game", [KEY_C])
@@ -140,7 +168,9 @@ func _setup_input() -> void:
 	_add_joy_button("aim", JOY_BUTTON_RIGHT_SHOULDER)
 	_add_joy_button("fire", JOY_BUTTON_X)
 	_add_joy_button("quick_turn", JOY_BUTTON_Y)
-	_add_joy_button("inventory", JOY_BUTTON_START)
+	_add_joy_button("inventory", JOY_BUTTON_BACK)
+	_add_joy_button("pause", JOY_BUTTON_START)
+	_add_joy_button("flashlight", JOY_BUTTON_LEFT_SHOULDER)
 	_add_joy_button("cancel", JOY_BUTTON_BACK)
 	_add_joy_button("continue_game", JOY_BUTTON_Y)
 	_add_mouse("aim", MOUSE_BUTTON_RIGHT)

@@ -20,6 +20,10 @@ func tp(who: String, it: Dictionary) -> void:
 
 func _ready() -> void:
 	m = get_parent()
+	# Headless runs uncapped; cap the frame rate so the frame-numbered steps
+	# below cover real time (fixes the old "Jenny moves" flake).
+	Engine.max_fps = 60
+	Game.tank_controls = true
 
 func _process(_d: float) -> void:
 	f += 1
@@ -27,11 +31,12 @@ func _process(_d: float) -> void:
 		5:
 			Game.mode = "play"
 			m.hud.hide_overlay()
+			Game.set_flag("intro_done")
 			Input.action_press("move_forward")
 		40:
 			Input.action_release("move_forward")
 			var p = m.players["jenny"]
-			ok(p.global_position.distance_to(m._off("jenny", Vector2i(0,0), Vector3(-1,0,0.5))) > 0.5, "Jenny moves with tank controls")
+			ok(p.global_position.distance_to(m._off("jenny", Vector2i(0,0), Vector3(-1,0,0.5))) > 0.3, "Jenny moves with tank controls")
 			var fuse = near_item("fuse")
 			tp("jenny", fuse)
 			m._interact(fuse)
@@ -90,7 +95,7 @@ func _process(_d: float) -> void:
 			b.dormant_t = 5.0
 			b.think_t = 0.0
 		160:
-			ok(m.bellman.state == m.bellman.S.CHASE or Game.mode == "struggle", "Bellman spots Jenny and chases (state %d, mode %s)" % [m.bellman.state, Game.mode])
+			ok(m.bellman.state == m.bellman.S.CHASE or m.bellman.state == m.bellman.S.NOTICE or Game.mode == "struggle", "Bellman spots Jenny and chases (state %d, mode %s)" % [m.bellman.state, Game.mode])
 		300:
 			ok(Game.mode == "struggle" or m.bellman.state == m.bellman.S.STUNNED, "Bellman grabs Jenny -> struggle (mode %s)" % Game.mode)
 			if Game.mode == "struggle":

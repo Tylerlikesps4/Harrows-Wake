@@ -6,6 +6,8 @@ var m
 var f := 0
 const OUT := "/workspace/work/harrows-wake/shots/"
 var only := ""
+var tag := "b9"
+var docs: Array = []
 func _ready() -> void:
 	m = get_parent()
 	Engine.max_fps = 30
@@ -13,11 +15,21 @@ func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--only="):
 			only = a.substr(7)
+		if a.begins_with("--tag="):
+			tag = a.substr(6)
 func shot(n: String) -> void:
 	var img := get_viewport().get_texture().get_image()
 	img.resize(1280, 960, Image.INTERPOLATE_NEAREST)
 	img.save_png(OUT + "b9_" + n + ".png")
 	print("shot ", n)
+## Native-resolution shot (phones/tablets): the window size is the device size.
+func shot_native(n: String) -> void:
+	var img := get_viewport().get_texture().get_image()
+	var ws := DisplayServer.window_get_size()
+	img.resize(ws.x, ws.y, Image.INTERPOLATE_NEAREST)
+	var fn := OUT + "docs/%s_%dx%d_%s.png" % [tag, ws.x, ws.y, n]
+	img.save_png(fn)
+	print("shot ", fn)
 func lineup(close: bool, mask: bool = false) -> void:
 	var base: Vector3 = m._off("dana", Vector2i(0,0), Vector3(0, 0.05, 0))
 	var ps := [m.players["jenny"], m.players["dana"], m.bellman, m.zombies[0]]
@@ -86,6 +98,56 @@ func _process(_d: float) -> void:
 			158: shot("door_b")
 			168: shot("door_c")
 			190: get_tree().quit()
+		return
+	# Every lore document plus the other overlay screens at the window's own size:
+	#   xvfb-run -s "-screen 0 2400x1080x24" godot --resolution 2400x1080 -- --shots --only=docs
+	if only == "docs":
+		if f == 2:
+			DirAccess.make_dir_recursive_absolute(OUT + "docs")
+			docs = m.NOTES.keys()
+		if f == 20:
+			play_setup()
+		var step := (f - 30) / 12
+		var sub := (f - 30) % 12
+		if f >= 30 and sub == 0:
+			if step < docs.size():
+				m._show_note(docs[step])
+			elif step == docs.size():
+				m._open_pause()
+			elif step == docs.size() + 1:
+				m._close_menu(); m._open_inventory()
+			elif step == docs.size() + 2:
+				m._close_menu(); Game.mode = "play"
+				m.hud.item_get("Tower Key", m.ITEM_INFO.get("Tower Key", ""))
+				m.hud.show_tutorial("Use the typewriter to switch to Dana and collect it. Hold RUN to sprint; the Bellman hears running.")
+				m.show_message("The canister rattles away toward Dana.", 5.0)
+			elif step == docs.size() + 3:
+				m._win()
+			elif step == docs.size() + 4:
+				m._show_end_card()
+			elif step == docs.size() + 5:
+				if m.credits_lbl != null:
+					m.credits_lbl.visible = false
+				m._open_settings(false)
+			elif step == docs.size() + 6:
+				m._close_menu()
+				Game.mode = "title"
+				m._show_title()
+			elif step == docs.size() + 7:
+				m.set_meta("death_reason", "The Bellman's bell stopped. Then it was very close.")
+				Game.mode = "dead"
+				m.dead_index = 0
+				m._render_death()
+			else:
+				get_tree().quit()
+		if f >= 30 and sub == 6:
+			var names := docs + ["pause", "inventory", "popups", "win", "endcard", "settings", "title", "death"]
+			if step < names.size():
+				shot_native(names[step])
+			if step < docs.size():
+				m.hud.ov_scroll.scroll_vertical = 100000  # the end of a long document
+		if f >= 30 and sub == 10 and step < docs.size() and m.hud.overlay_overflows():
+			shot_native(docs[step] + "_end")
 		return
 	if only == "faces":
 		match f:

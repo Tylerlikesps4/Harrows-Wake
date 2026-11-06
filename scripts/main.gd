@@ -51,7 +51,7 @@ var MAPS := {
 }
 
 var NOTES := {
-	"intro": ["October 31, 1998", "Harrow's Wake, Maine.\n\nAt 11:52 PM the bell above the Meridian Biotech site rang by itself. Everyone who heard it changed. The fog came down and never lifted.\n\nTwo survivors are still breathing on opposite ends of town. If they ever meet, the Choir Stone's resonance kills them both.\n\nThe town's old pneumatic mail tubes still work.\n\n%s Continue"],
+	"intro": ["October 31, 1998", "Harrow's Wake, Maine.\n\nAt 11:52 PM the bell above the Meridian Biotech site rang by itself. Everyone who heard it changed. The fog came down and never lifted.\n\nTwo survivors are still breathing on opposite ends of town. If they ever meet, the Choir Stone's resonance kills them both.\n\nThe town's old pneumatic mail tubes still work."],
 	"note_toll": ["Dispatch Memo", "Oct 31, 11:52 PM.\nMultiple calls: the Meridian bell is ringing on its own. Callers report 'singing' coming up through the storm drains. Two callers say their husbands 'went soft, like candle wax.'\nAll units to Bell Street.\n- Dispatch"],
 	"note_chief": ["Chief's Log", "Meridian's people sealed the lab and left us the town.\n\nThe old mail tubes still run from our Records Room to St. Agnes Orphanage on Hill Road. If anyone's alive up there, that's how we reach them.\n\nThe evidence room's mag-lock blew its fuse. Spares went up to the orphanage with the Christmas lights last year. Of course they did.\n- Chief Harlan"],
 	"note_jenny": ["Torn Diary Page", "If you find this, I'm hiding.\n\nThe tall man with the bell walks the halls. Don't run near him. He HEARS you. Don't shine a light at him either.\n\nThe wardrobes are safe if he didn't see you get in. Hold your breath in there, but not too long.\n\nHe never comes into the Mail Room. The tube there goes all the way to the police station.\n- J."],
@@ -790,6 +790,8 @@ func _build_ui() -> void:
 	touch = CanvasLayer.new()
 	touch.set_script(TouchScript)
 	add_child(touch)
+	hud.touch_ref = touch
+	hud.layout_overlay()
 	# Title camera: looking down the chapel aisle through the fog.
 	title_cam = Camera3D.new()
 	title_cam.fov = 55.0
@@ -1138,9 +1140,9 @@ func _win() -> void:
 		rank = "B"
 	elif secs < 1500.0:
 		rank = "C"
-	var body := "Jenny slips the Tower Key into the padlock. The chain falls. Outside, the fog is moving like breath.\n\nSomewhere above the town, the bell starts to ring again.\n\nTIME  %02d:%02d\nSAVES  %d\nRANK  %s\n\n%s Continue" % [int(secs) / 60, int(secs) % 60, saves, rank, Game.glyph("interact")]
+	var body := "Jenny slips the Tower Key into the padlock. The chain falls. Outside, the fog is moving like breath.\n\nSomewhere above the town, the bell starts to ring again.\n\nTIME  %02d:%02d\nSAVES  %d\nRANK  %s" % [int(secs) / 60, int(secs) % 60, saves, rank]
 	play_sfx("bell_toll", null, -6.0, 0.7)
-	hud.show_overlay("HARROW'S WAKE", body, Color(0.85, 0.7, 0.35))
+	hud.show_overlay("HARROW'S WAKE", body, Color(0.85, 0.7, 0.35), 0.88, "%s Continue" % Game.glyph("interact"))
 
 
 # ---------------------------------------------------------------- demo end card
@@ -1230,17 +1232,20 @@ func _title_opts() -> Array:
 
 func _title_body() -> String:
 	var opts := _title_opts()
-	var body := "\n\n\n\n\n\n"
+	var body := "\n\n\n\n\n"
 	for i in opts.size():
 		body += ("              > " if i == title_index else "                 ") + opts[i] + "\n"
-	body += "\n\n      %s select      Headphones recommended.\n                         FREE DEMO" % Game.glyph("interact")
-	return body
+	return body.strip_edges(false, true)
+
+
+func _title_hint() -> String:
+	return "%s select      Headphones recommended.      FREE DEMO" % Game.glyph("interact")
 
 
 func _show_title() -> void:
 	title_cam.make_current()
 	_set_fog(Color(0.09, 0.03, 0.025), 0.11)
-	hud.show_overlay("HARROW'S WAKE", _title_body(), Color(0.75, 0.12, 0.1), 0.25)
+	hud.show_overlay("HARROW'S WAKE", _title_body(), Color(0.75, 0.12, 0.1), 0.25, _title_hint())
 	hud.ov_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_fade_in(2.5)
 
@@ -1258,7 +1263,7 @@ func _title_process(delta: float) -> void:
 	if Input.is_action_just_pressed("move_forward") or Input.is_action_just_pressed("move_back"):
 		title_index = (title_index + (1 if Input.is_action_just_pressed("move_back") else n - 1)) % n
 		play_sfx("menu", null, -8.0)
-		hud.show_overlay("HARROW'S WAKE", _title_body(), Color(0.75, 0.12, 0.1), 0.25)
+		hud.show_overlay("HARROW'S WAKE", _title_body(), Color(0.75, 0.12, 0.1), 0.25, _title_hint())
 	if Input.is_action_just_pressed("interact"):
 		var choice: String = opts[title_index]
 		if choice == "CONTINUE":
@@ -1294,8 +1299,15 @@ func _show_note(key: String) -> void:
 	var body: String = n[1]
 	if body.contains("%s"):
 		body = body % Game.glyph("interact")
-	hud.show_overlay(n[0], body)
+	# Documents use the framed reader: wrapped, scrollable, controls in the footer.
+	hud.show_overlay(n[0], body, Color(0.86, 0.84, 0.78), 0.88, _note_hint(key == "intro"), true)
 	play_sfx("pickup", null, -6.0)
+
+
+func _note_hint(cont: bool = false) -> String:
+	if cont:
+		return "%s Continue" % Game.glyph("interact")
+	return "%s / %s close" % [Game.glyph("interact"), Game.glyph("cancel")]
 
 
 func _fade_in(secs: float) -> void:
@@ -1335,11 +1347,10 @@ func _render_menu() -> void:
 		body += "   ...\n"
 	if menu_desc.is_valid():
 		body += "\n" + str(menu_desc.call(menu_index)) + "\n"
-	if menu_adjust.is_valid():
-		body += "\nLeft/Right change   %s toggle   %s back" % [Game.glyph("interact"), Game.glyph("cancel")]
-	else:
-		body += "\n%s choose   %s back" % [Game.glyph("interact"), Game.glyph("cancel")]
-	hud.show_overlay(menu_title, body)
+	# Controls sit in the reader's footer so a long menu can't push them off screen.
+	var hint := ("Left/Right change   %s toggle   %s back" if menu_adjust.is_valid() else "%s choose   %s back") % [Game.glyph("interact"), Game.glyph("cancel")]
+	hud.show_overlay(menu_title, body.strip_edges(false, true), Color(0.86, 0.84, 0.78), 0.88, hint)
+	hud.follow_line("> ")
 
 
 func _close_menu() -> void:
@@ -1825,7 +1836,7 @@ func _answer_phone(it: Dictionary) -> void:
 	play_sfx("click")
 	static_player.volume_db = -14.0
 	Game.mode = "note"
-	hud.show_overlay("The Phone", "Static. Then a child, very close to the receiver:\n\n\"Officer? He rings when he's hungry. When the bell stops, that's when he's near.\"\n\nBreathing. Then, faint and far away on the line - a hand bell.\n\n%s Hang up" % Game.glyph("interact"))
+	hud.show_overlay("The Phone", "Static. Then a child, very close to the receiver:\n\n\"Officer? He rings when he's hungry. When the bell stops, that's when he's near.\"\n\nBreathing. Then, faint and far away on the line - a hand bell.", Color(0.86, 0.84, 0.78), 0.88, "%s Hang up" % Game.glyph("interact"), true)
 	create_tween().tween_callback(play_sfx.bind("bell", null, -16.0, 0.9)).set_delay(2.0)
 
 
@@ -1949,6 +1960,9 @@ func _process(delta: float) -> void:
 		"title":
 			_title_process(delta)
 		"note":
+			var sc := Input.get_axis("move_forward", "move_back")
+			if absf(sc) > 0.2:
+				hud.scroll_overlay(sc * 140.0 * delta)
 			if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("cancel"):
 				hud.hide_overlay()
 				Game.mode = "play"

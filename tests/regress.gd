@@ -171,6 +171,72 @@ func _process(d: float) -> void:
 			m.menu_cb.call(3)   # Quit to title
 
 
+## Lore documents were cut off at the screen edges on phones (build-9): every
+## document panel must sit inside the viewport and the display safe area, clear of
+## the touch buttons, with all of its text reachable by scrolling.
+func _check_reader() -> void:
+	var root := get_tree().root
+	var old_size := root.size
+	var hud = m.hud
+	var touch_was: bool = m.touch.visible
+	m.touch.visible = true   # as on a phone
+	var sizes := [Vector2i(2400, 1080), Vector2i(2340, 1080), Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(1024, 768)]
+	for sz: Vector2i in sizes:
+		# Plain screen, then the same phone with a camera cutout on the left and a
+		# rounded-corner inset on the right (safe area in window pixels).
+		for notch in [false, true]:
+			hud.safe_override = Rect2(120, 0, sz.x - 120 - 48, sz.y) if notch else Rect2()
+			root.size = sz
+			await get_tree().process_frame
+			m.touch._layout()
+			hud._layout()
+			var vp := Rect2(Vector2.ZERO, hud.get_viewport().get_visible_rect().size)
+			var safe: Rect2 = hud.safe_rect()
+			var bad: Array = []
+			for key in m.NOTES.keys():
+				m._show_note(key)
+				await get_tree().process_frame
+				await get_tree().process_frame
+				var box: Rect2 = hud.ov_box.get_global_rect()
+				var why := ""
+				if not vp.encloses(box):
+					why = "outside viewport"
+				elif not safe.grow(0.5).encloses(box):
+					why = "outside safe area"
+				elif not box.grow(0.5).encloses(hud.ov_scroll.get_global_rect()) or not box.grow(0.5).encloses(hud.ov_title.get_global_rect()) or (hud.ov_hint.visible and not box.grow(0.5).encloses(hud.ov_hint.get_global_rect())):
+					why = "title/body/footer spill out of the panel"
+				elif hud.ov_body.size.x > hud.ov_scroll.size.x + 0.5:
+					why = "text wider than the panel"
+				elif hud.ov_scroll.get_v_scroll_bar().max_value + 1.0 < hud.ov_body.get_combined_minimum_size().y:
+					why = "end of the text can't be scrolled to"
+				else:
+					for r: Rect2 in m.touch.overlay_rects():
+						if r.intersects(box):
+							why = "overlaps a touch button"
+				if why != "":
+					bad.append("%s %s %s" % [key, why, box])
+				hud.hide_overlay()
+				Game.mode = "play"
+			ok(bad.is_empty(), "Document reader fits %dx%d%s (%d documents)%s" % [sz.x, sz.y, " with notch" if notch else "", m.NOTES.size(), "" if bad.is_empty() else ": " + str(bad)])
+			# The other popups: messages, the item banner and the tutorial box.
+			m.show_message("The canister rattles away toward Dana. Use the typewriter to switch to her and collect it.", 1.0)
+			hud.show_tutorial("Use the typewriter to switch to Dana and collect it. Hold RUN to sprint; the Bellman hears running.", 1.0)
+			hud.item_get("Tower Key", m.ITEM_INFO.get("Tower Key", ""))
+			await get_tree().process_frame
+			var pops := [hud.message.get_global_rect(), hud.get_bg.get_global_rect(), hud.tut_bg.get_global_rect()]
+			var inside := true
+			for r: Rect2 in pops:
+				inside = inside and safe.grow(0.5).encloses(r)
+			ok(inside and not pops[0].intersects(pops[1]) and not pops[1].intersects(pops[2]), "Messages, item banner and tutorial stay on screen without overlapping at %dx%d%s" % [sz.x, sz.y, " with notch" if notch else ""])
+			hud.get_t = 0.01
+			hud.msg_t = 0.01
+			hud.tut_t = 0.01
+	hud.safe_override = Rect2()
+	root.size = old_size
+	m.touch.visible = touch_was
+	await get_tree().process_frame
+
+
 func _after_title() -> void:
 	for i in 5:
 		await get_tree().process_frame
@@ -188,6 +254,7 @@ func _after_title() -> void:
 	m.players["jenny"].global_position = Vector3(fz["point"].x, 0.05, fz["point"].z)
 	m._interact(fz)
 	ok(Game.has_item("jenny", "Fuse"), "NEW GAME after quitting to title can still get the fuse")
+	await _check_reader()
 	Game.smoke_phase = 0
 	print("REGRESS DONE")
 	get_tree().quit()

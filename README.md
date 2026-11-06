@@ -77,7 +77,7 @@ The project mixes **C#** and **GDScript**, so it needs the **Godot 4.3 .NET edit
 1. Install **Godot 4.3 .NET** (godotengine.org/download/archive/4.3-stable, the ".NET" download) and the **.NET 8 SDK** (dotnet.microsoft.com).
 2. Clone this repo and run `dotnet build HarrowsWake.sln` once (or press Build in the editor).
 3. Open Godot, **Import**, pick `project.godot`, press **F5**.
-3. Tests: `godot --headless -- --smoke` (automated playthrough), `godot --headless -- --flow` (title/settings/pause/hiding) and `godot --headless -- --regress` (one check per fixed bug). Screenshots: `xvfb-run -s "-screen 0 1280x960x24" godot -- --shots`; render cost per room: `xvfb-run ... godot --rendering-driver opengl3 -- --perf`.
+3. Tests: `godot --headless -- --smoke` (automated playthrough), `godot --headless -- --flow` (title/settings/pause/hiding) and `godot --headless -- --regress` (one check per fixed bug). Screenshots: `xvfb-run -s "-screen 0 1280x960x24" godot -- --shots`; every document/menu/popup at a device size: `xvfb-run -s "-screen 0 2400x1080x24" godot --resolution 2400x1080 -- --shots --only=docs --touch`; render cost per room: `xvfb-run ... godot --rendering-driver opengl3 -- --perf`.
 4. Export: install the 4.3 **.NET (mono)** export templates (Editor > Manage Export Templates), then Project > Export > Windows Desktop or Android. Android needs the Android SDK + a debug keystore set in Editor Settings.
 
 ## Install the APK

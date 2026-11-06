@@ -18,6 +18,10 @@ var joy_vec := Vector2.ZERO
 var buttons: Dictionary = {}
 var dana_only: Array = ["fire", "aim"]
 var touch_capable: bool = false
+## Buttons that stay up while a document, menu or end screen is open; the HUD's
+## reader panel keeps its text clear of them.
+const OVERLAY_BUTTONS := ["interact", "cancel", "pause", "inventory"]
+var inset := Rect2()   # safe-area margins in canvas pixels (left, top, right, bottom)
 
 
 func _ready() -> void:
@@ -80,6 +84,10 @@ func release_all() -> void:
 
 func _layout() -> void:
 	var s: Vector2 = get_viewport().get_visible_rect().size
+	var hud = get_parent().get("hud") if get_parent() != null else null
+	if hud != null and hud.has_method("safe_rect"):
+		var sr: Rect2 = hud.safe_rect()
+		inset = Rect2(sr.position.x, sr.position.y, s.x - sr.end.x, s.y - sr.end.y)
 	var w := s.x
 	var h := s.y
 	_place("interact", Vector2(w - 30, h - 46))
@@ -93,11 +101,37 @@ func _layout() -> void:
 	_place("cancel", Vector2(w - 66, 14))
 	if joy_index < 0:
 		_reset_stick()
+	if hud != null and hud.has_method("layout_overlay"):
+		hud.layout_overlay()
+
+
+## Canvas rects of the lower-screen controls shown while playing (stick ring
+## and thumb buttons); the HUD keeps its messages and item banner clear of them.
+func play_rects() -> Array:
+	var out: Array = []
+	var sr := STICK_R + 2.0
+	var h: float = get_viewport().get_visible_rect().size.y
+	out.append(Rect2(Vector2(52 + inset.position.x, h - 52 - inset.size.y) - Vector2(sr, sr), Vector2(sr, sr) * 2.0))
+	for a in ["interact", "run", "fire", "aim", "flashlight", "quick_turn"]:
+		var b: TouchScreenButton = buttons[a]
+		var r: float = float(b.get_meta("r")) * b.scale.x
+		out.append(Rect2(b.position, Vector2(r, r) * 2.0))
+	return out
+
+
+## Canvas rects of the buttons still shown over documents and menus.
+func overlay_rects() -> Array:
+	var out: Array = []
+	for a in OVERLAY_BUTTONS:
+		var b: TouchScreenButton = buttons[a]
+		var r: float = float(b.get_meta("r")) * b.scale.x
+		out.append(Rect2(b.position, Vector2(r, r) * 2.0))
+	return out
 
 
 func _reset_stick() -> void:
 	var h: float = get_viewport().get_visible_rect().size.y
-	joy_origin = Vector2(52, h - 52)
+	joy_origin = Vector2(52 + inset.position.x, h - 52 - inset.size.y)
 	base.position = joy_origin
 	knob.position = joy_origin
 	base.modulate.a = 0.5
@@ -113,6 +147,9 @@ func _place(action: String, center: Vector2) -> void:
 	var s: Vector2 = get_viewport().get_visible_rect().size
 	# Bigger buttons spread out from the screen corner so they don't overlap.
 	var c: Vector2 = Vector2(s.x, s.y) + (center - Vector2(s.x, s.y)) * sc if center.y > s.y * 0.5 else Vector2(s.x + (center.x - s.x) * sc, center.y * sc)
+	# Stay inside the safe area (notch / rounded corners).
+	c.x += inset.position.x if c.x < s.x * 0.5 else -inset.size.x
+	c.y += inset.position.y if c.y < s.y * 0.5 else -inset.size.y
 	b.position = c - Vector2(r, r)
 
 
@@ -122,8 +159,16 @@ func _process(_d: float) -> void:
 	var is_dana: bool = Game.state.get("active", "jenny") == "dana"
 	for a in dana_only:
 		buttons[a].visible = is_dana and Game.mode == "play"
-	buttons["flashlight"].visible = Game.mode == "play"
-	buttons["quick_turn"].visible = Game.mode == "play"
+	var playing: bool = Game.mode == "play"
+	buttons["flashlight"].visible = playing
+	buttons["quick_turn"].visible = playing
+	buttons["run"].visible = playing
+	# The floating stick only shows its resting ring in play; on documents and
+	# menus it stays out of the way of the text until a thumb lands.
+	var show_stick: bool = playing or joy_index >= 0
+	base.visible = show_stick
+	knob.visible = show_stick
+	hint.visible = playing and joy_index < 0
 
 
 func _input(event: InputEvent) -> void:
@@ -145,7 +190,8 @@ func _input(event: InputEvent) -> void:
 		return
 	var half: float = get_viewport().get_visible_rect().size.x * 0.5
 	if event is InputEventScreenTouch:
-		if event.pressed and joy_index < 0 and event.position.x < half and event.position.y > 30:
+		# While reading a document a drag scrolls the text instead of steering.
+		if event.pressed and joy_index < 0 and event.position.x < half and event.position.y > 30 and Game.mode != "note":
 			joy_index = event.index
 			joy_origin = event.position
 			base.position = joy_origin

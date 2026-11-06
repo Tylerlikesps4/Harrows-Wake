@@ -1,6 +1,6 @@
 # Credits
 
-Every third-party asset in Harrow's Wake is **CC0 1.0 (public domain)**. Assets were downscaled or trimmed for size; no other changes to their licensing.
+Every third-party asset in Harrow's Wake is **CC0 1.0 (public domain)**; the music is original (see Music below). Assets were downscaled or trimmed for size; no other changes to their licensing.
 
 ## Characters and animation (`assets/models/`)
 | File | Asset | Author | Source | License |
@@ -36,9 +36,27 @@ All from Poly Haven (https://polyhaven.com/license, CC0): old_wood_floor, decrep
 | `amb_orphanage` (drone53), `amb_station` (drone61) | Droning sound effects | bretbernhoft | https://opengameart.org/content/droning-sound-effects | CC0 |
 | `amb_chapel` | Ambient Horror | techiew | https://opengameart.org/content/ambient-horror | CC0 |
 | `amb_rain` | Amb rain loop 1 | Kresiek The Furry | https://opengameart.org/content/amb-rain-loop-1 | CC0 |
-| `title_music` ("The Surreal Truth") | Ambience Pack 1: Sci-Fi Horror | Joth | https://opengameart.org/content/ambience-pack-1-sci-fi-horror | CC0 |
 
 Synthesised in code (no suitable CC0 recording found): the telephone ring and the music box (`scripts/synth.gd`).
+
+## Music (`assets/audio/title_music.ogg`, `assets/audio/credits_song.ogg`)
+| File | Work | Author | License |
+|---|---|---|---|
+| `title_music.ogg` | "Harrow's Wake (Main Theme)" - instrumental (title screen loop) | Tylerlikesps4 (original composition) | GPL-3.0-or-later |
+| `credits_song.ogg` | "Harrow's Wake (Main Theme)" - vocal version with original lullaby lyrics (end credits) | Tylerlikesps4 (original composition and lyrics) | GPL-3.0-or-later |
+
+Copyright (C) 2026 Tylerlikesps4. Original works, licensed under the same terms as the code (GNU GPL v3 or later, see LICENSE). The score is generated from source: `tools/soundtrack/` (`compose.py` is the note data, `synth.py` the synth and mix, `vocal.py` the singing), which is the preferred form for modifying it. Both files are mono 22 kHz Ogg downmixes of the 44.1 kHz stereo masters.
+
+Tools and data used to make it (none of their licenses extend to the music):
+| Tool / data | Used for | License |
+|---|---|---|
+| FluidR3_GM soundfont, Frank Wen (Debian `fluid-soundfont-gm`) | music box, celesta, strings, choir, bass, timpani, tubular bells samples | MIT |
+| FluidSynth 2.4 | rendering the MIDI parts with the soundfont | LGPL-2.1 |
+| Piper TTS voice `en_US-ljspeech-high` (rhasspy/piper-voices) | the spoken source of the sung vocal | MIT (model); trained on LJ Speech, public domain |
+| Piper TTS 1.8 (piper1-gpl) with espeak-ng phonemizer | speech synthesis + phoneme timing | GPL-3.0 (tool) |
+| pyworld / WORLD vocoder | re-pitching and re-timing speech into singing | MIT / modified BSD |
+| NumPy, SciPy, soundfile | hand bell, drone, wind, tape, reverb, PS1 22 kHz crush | BSD |
+| FFmpeg | loudness normalisation (-14 LUFS) and encoding | LGPL-2.1+ |
 
 ## Code
 Game code, shaders and level layouts: Copyright (C) 2026 Tylerlikesps4, GNU GPL v3 (see LICENSE). Character faces are painted in code (`scripts/actor_model.gd`). Engine: Godot 4.3 (MIT).

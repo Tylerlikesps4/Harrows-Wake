@@ -82,6 +82,7 @@ var static_player: AudioStreamPlayer = null
 var amb_player: AudioStreamPlayer = null
 var amb2_player: AudioStreamPlayer = null
 var title_music: AudioStreamPlayer = null
+var credits_music: AudioStreamPlayer = null
 var heart_t: float = 0.0
 var cur_cam_key: String = ""
 var cur_room_name: String = ""
@@ -775,6 +776,12 @@ func _build_sfx() -> void:
 	amb_player = _loop_player("amb_orphanage", -80.0)
 	amb2_player = _loop_player("amb_station", -80.0)
 	title_music = _loop_player("title_music", -80.0)
+	# End credits: the sung version of the main theme, played once.
+	credits_music = AudioStreamPlayer.new()
+	credits_music.name = "credits_music"
+	credits_music.stream = _load_sfx("credits_song")
+	credits_music.volume_db = -4.0
+	add_child(credits_music)
 	var rain := _loop_player("amb_rain", -80.0)
 	rain.name = "rain"
 
@@ -1096,8 +1103,11 @@ Kenney, rubberduck, kurt, AntumDeluge, bart,
 Cassie-OrbitGames, remaxim, Nocturnal_Vanguard,
 bretbernhoft, techiew, Kresiek (CC0, via OpenGameArt)
 
-Title music
-\"The Surreal Truth\" - Joth (CC0)
+Music
+\"Harrow's Wake (Main Theme)\" - original score
+and lullaby by Tylerlikesps4 (GPL-3.0)
+FluidR3 GM soundfont - Frank Wen (MIT)
+Voice: Piper TTS, LJ Speech voice (MIT, public-domain data)
 
 Engine
 Godot Engine 4.3 (MIT)
@@ -1125,6 +1135,8 @@ func _show_end_card() -> void:
 	credits_lbl.position = Vector2(0, 250)
 	credits_lbl.visible = true
 	play_sfx("bell_toll", null, -8.0, 0.6)
+	if credits_music != null and credits_music.stream != null:
+		credits_music.play()
 
 
 func end_card_text() -> String:
@@ -1133,9 +1145,10 @@ func end_card_text() -> String:
 
 func _end_card_process(delta: float) -> void:
 	end_t += delta
-	title_music.volume_db = lerpf(title_music.volume_db, -12.0, minf(1.0, delta))
+	# The sung main theme plays over the roll; the title loop steps aside.
+	title_music.volume_db = lerpf(title_music.volume_db, -80.0, minf(1.0, delta))
 	if end_t > 4.0 and credits_lbl != null:
-		credits_lbl.position.y -= delta * 14.0
+		credits_lbl.position.y -= delta * 10.0
 		var fadeout := clampf((end_t - 4.0) / 2.0, 0.0, 1.0)
 		hud.ov_body.modulate.a = 1.0 - fadeout
 		hud.ov_title.modulate.a = 1.0 - fadeout

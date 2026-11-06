@@ -169,6 +169,7 @@ func _process(_d: float) -> void:
 			m._show_end_card()
 			var t: String = m.end_card_text()
 			ok(Game.mode == "endcard" and t.contains("THANKS FOR PLAYING") and t.contains("demo") and t.contains("coming soon") and m.credits_lbl.text.contains("Quaternius"), "Demo end card + credits roll")
+			ok(m.credits_music != null and m.credits_music.stream != null and m.credits_lbl.text.contains("Main Theme"), "End credits play the sung main theme")
 		320:
 			ok(Game.load_game() and Game.state["inv"]["jenny"].has("Tower Key") == false, "Save loads (snapshot before key handoff)")
 			# Death -> retry from last save (continues in the reloaded scene).

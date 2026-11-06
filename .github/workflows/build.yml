@@ -55,6 +55,33 @@ jobs:
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> $GITHUB_ENV
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> $GITHUB_ENV
 
+      # Release signing. With repo secrets ANDROID_KEYSTORE_B64 (base64 of a .jks/.p12),
+      # ANDROID_KEY_ALIAS and ANDROID_KEYSTORE_PASSWORD every build shares one
+      # signature, so a new APK installs over the old one. Without them a throwaway
+      # key is made per run (Android then needs the old build uninstalled first).
+      - name: Android release key
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$KS_ALIAS" >> $GITHUB_ENV
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KS_PASS" >> $GITHUB_ENV
+            echo "Using the stable release key from repo secrets"
+          else
+            keytool -genkeypair -keystore "$RUNNER_TEMP/release.keystore" -storepass android -alias harrowswake \
+              -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Harrow's Wake Demo,O=Tylerlikesps4,C=US"
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=harrowswake" >> $GITHUB_ENV
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=android" >> $GITHUB_ENV
+            echo "No release key secret: using a per-run key"
+          fi
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$RUNNER_TEMP/release.keystore" >> $GITHUB_ENV
+          # Every build gets a higher versionCode so Android treats it as an update.
+          sed -i "s/^version\/code=.*/version\/code=${{ github.run_number }}/" export_presets.cfg
+          grep "version/code" export_presets.cfg
+
       - name: Build C# (dotnet)
         run: dotnet build HarrowsWake.sln -c Debug
 
@@ -76,6 +103,14 @@ jobs:
           grep -E "^(PASS|FAIL)" flow.log
           ! grep -q "^FAIL" flow.log
 
+      - name: Regression tests (bugs fixed in build-9+)
+        continue-on-error: true
+        run: |
+          timeout 120 godot --headless -- --regress 2>&1 | tee regress.log || true
+          grep -E "^(PASS|FAIL)" regress.log
+          ! grep -q "^FAIL" regress.log
+          grep -q "REGRESS DONE" regress.log
+
       - name: Export Windows
         run: |
           mkdir -p out
@@ -89,9 +124,13 @@ jobs:
 
       - name: Export Android APK
         run: |
-          godot --headless --export-debug "Android" "$PWD/out/HarrowsWake.apk"
+          # Release template (smaller, faster than the debug one). The csproj drops the
+          # unused Mono static libraries from the .NET publish folder.
+          godot --headless --export-release "Android" "$PWD/out/HarrowsWake.apk"
           ls -la out
           test -f out/HarrowsWake.apk
+          unzip -l out/HarrowsWake.apk | sort -nr | head -12
+          ! unzip -l out/HarrowsWake.apk | grep -E "\.a$|assets/out/"
 
       - uses: actions/upload-artifact@v4
         with:

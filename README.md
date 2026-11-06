@@ -6,7 +6,7 @@ This is the **free, open-source demo**: one complete chapter (about 15-25 minute
 
 ## Play
 - **Android:** grab `HarrowsWake.apk` from the newest Release, open it, and allow installs from your browser when asked. On-screen controls appear automatically; a Bluetooth controller works too. The picture fills wide phone screens (no black bars).
-- **Windows:** run `HarrowsWake.exe` (if SmartScreen warns, click More info, then Run anyway; it's unsigned).
+- **Windows:** download `HarrowsWake-Windows.zip`, extract it, and run `HarrowsWake.exe` (keep the `data_HarrowsWake_*` folder beside it; it holds the C# code). If SmartScreen warns, click More info, then Run anyway; it's unsigned.
 - **Edit / other OS:** see "Build from source" below (needs the Godot 4.3 .NET edition).
 - Headphones recommended: the Bellman's bell and footsteps are positional, so you hear which way he's coming from.
 

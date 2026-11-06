@@ -1251,17 +1251,16 @@ func _render_menu() -> void:
 	var body := menu_header + "\n\n" if menu_header != "" else ""
 	var first := 0
 	var last := menu_options.size()
-	const WIN := 8
+	const WIN := 6
 	if menu_options.size() > WIN + 1:
 		first = clampi(menu_index - WIN / 2, 0, menu_options.size() - WIN)
 		last = first + WIN
-		body += ("   ...\n" if first > 0 else "\n")
+		if first > 0:
+			body += "   ...\n"
 	for i in range(first, last):
 		body += ("> " if i == menu_index else "   ") + str(menu_options[i]) + "\n"
 	if last < menu_options.size():
 		body += "   ...\n"
-	elif first > 0:
-		body += "\n"
 	if menu_desc.is_valid():
 		body += "\n" + str(menu_desc.call(menu_index)) + "\n"
 	if menu_adjust.is_valid():

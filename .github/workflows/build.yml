@@ -10,25 +10,48 @@ permissions:
 
 env:
   GODOT_VERSION: "4.3"
+  GODOT_URL: https://github.com/godotengine/godot/releases/download/4.3-stable
 
+# Godot 4.3 .NET (mono) build. The barichello/godot-ci:mono-4.3 container has no
+# dotnet on PATH, no JDK and no Android SDK, so this runs on the plain Ubuntu
+# runner instead (it ships the Android SDK), with .NET 8 and Java 17 set up by
+# actions and the official Godot .NET editor + export templates.
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: barichello/godot-ci:mono-4.3
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Godot templates and Android debug key
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Godot 4.3 .NET + export templates
         run: |
-          mkdir -p ~/.local/share/godot/export_templates ~/.config
-          cp -r /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable.mono ~/.local/share/godot/export_templates/ || true
-          ls ~/.local/share/godot/export_templates/
-          dotnet --info | head -20
-          cp -r /root/.config/godot ~/.config/godot || true
-          keytool -genkeypair -v -keystore "$GITHUB_WORKSPACE/../debug.keystore" -storepass android -alias androiddebugkey \
+          cd "$RUNNER_TEMP"
+          curl -sSL -o godot.zip "$GODOT_URL/Godot_v4.3-stable_mono_linux_x86_64.zip"
+          unzip -q godot.zip
+          sudo ln -sf "$RUNNER_TEMP/Godot_v4.3-stable_mono_linux_x86_64/Godot_v4.3-stable_mono_linux.x86_64" /usr/local/bin/godot
+          curl -sSL -o tpl.tpz "$GODOT_URL/Godot_v4.3-stable_mono_export_templates.tpz"
+          unzip -q tpl.tpz
+          mkdir -p ~/.local/share/godot/export_templates/4.3.stable.mono
+          mv templates/* ~/.local/share/godot/export_templates/4.3.stable.mono/
+          ls ~/.local/share/godot/export_templates/4.3.stable.mono/
+          godot --version
+
+      - name: Android SDK paths and debug key
+        run: |
+          mkdir -p ~/.config/godot
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/java_sdk_path = "%s"\n' "$ANDROID_HOME" "$JAVA_HOME" > ~/.config/godot/editor_settings-4.3.tres
+          cat ~/.config/godot/editor_settings-4.3.tres
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/debug.keystore" -storepass android -alias androiddebugkey \
             -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$(readlink -f $GITHUB_WORKSPACE/../debug.keystore)" >> $GITHUB_ENV
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$RUNNER_TEMP/debug.keystore" >> $GITHUB_ENV
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> $GITHUB_ENV
           echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> $GITHUB_ENV
 
@@ -36,7 +59,7 @@ jobs:
         run: dotnet build HarrowsWake.sln -c Debug
 
       - name: Import project
-        run: timeout 180 godot --headless --editor --quit || true
+        run: timeout 300 godot --headless --editor --quit || true
 
       - name: Smoke test (automated playthrough)
         continue-on-error: true
@@ -44,8 +67,9 @@ jobs:
           timeout 300 godot --headless -- --smoke 2>&1 | tee smoke.log || true
           grep -E "^(PASS|FAIL)" smoke.log
           ! grep -q "^FAIL" smoke.log
+          grep -q "SMOKE DONE" smoke.log
 
-      - name: Flow test (title, intro, pause, flashlight, hiding)
+      - name: Flow test (title, settings, intro, pause, flashlight, hiding)
         continue-on-error: true
         run: |
           timeout 120 godot --headless -- --flow 2>&1 | tee flow.log || true
@@ -55,12 +79,19 @@ jobs:
       - name: Export Windows
         run: |
           mkdir -p out
-          godot --headless --export-release "Windows Desktop" "$PWD/out/HarrowsWake.exe"
+          mkdir -p out/win
+          godot --headless --export-release "Windows Desktop" "$PWD/out/win/HarrowsWake.exe"
+          ls -laR out/win | head -40
+          test -f out/win/HarrowsWake.exe
+          # C# builds ship the .NET assemblies in a data_* folder next to the exe.
+          (cd out/win && zip -qr ../HarrowsWake-Windows.zip .)
+          ls -la out
 
       - name: Export Android APK
         run: |
           godot --headless --export-debug "Android" "$PWD/out/HarrowsWake.apk"
           ls -la out
+          test -f out/HarrowsWake.apk
 
       - uses: actions/upload-artifact@v4
         with:
@@ -72,7 +103,7 @@ jobs:
         with:
           tag_name: build-${{ github.run_number }}
           name: Harrow's Wake build ${{ github.run_number }}
-          body: Free demo build. On Android, download HarrowsWake.apk and allow installs from your browser. On Windows, run HarrowsWake.exe.
+          body: Free demo build (Godot 4.3 .NET, C# + GDScript). On Android, download HarrowsWake.apk and allow installs from your browser. On Windows, extract the zip and run HarrowsWake.exe (keep the data_HarrowsWake folder next to it).
           files: |
             out/HarrowsWake.apk
-            out/HarrowsWake.exe
+            out/HarrowsWake-Windows.zip

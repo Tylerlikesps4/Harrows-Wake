@@ -47,7 +47,9 @@ If he grabs you, mash A / E. The higher your Panic, the harder it gets. In a war
 - **Polish:** title screen in the chapel fog with the bell; fades on room cuts and character switches; pause menu; first-time tutorial prompts; ranked ending (S to D).
 - **Faces:** low-res painted faces on every character; the Bellman wears a cracked porcelain mask with a sewn mouth and glowing eyes.
 - **Feel:** stride-matched walk/run animation (no foot sliding), turn-in-place, aim laser, muzzle flash + recoil, enemy hit reactions, item pickup flourish and banner, fade-and-creak door transitions, a wax-melt death for the Tallow-folk.
-- **Settings:** brightness, master/music/SFX volume, tank or modern controls, invert stick, CRT, flashlight shadows, FPS counter, touch stick sensitivity and button size/opacity.
+- **Settings:** brightness, master/music/SFX volume, tank or modern controls, invert stick, CRT, flashlight shadows, FPS counter, touch stick sensitivity and button size/opacity, door animations.
+- **Door scenes:** Resident Evil-style: walking into another room plays a short (about 1.5 s) door-opening scene. Press A / E to skip it, or switch it off in Settings.
+- **Phones:** leaving the app (home button, a call) pauses the game. If you switch the touch controls off for a gamepad, touching the screen brings them back.
 - **Phones:** renders at 320x240 internally (cheap fill), MSAA off, only the flashlight casts shadows (off by default on phones), and only the active survivor's building is drawn.
 - Fixed RE-style cameras per room; smooth acceleration/turning and interpolated character motion (no jitter on high-refresh phones).
 - Bellman stalker AI: sight cone (longer when your flashlight is on), hearing, chase, search, a "saw you hide" check, stun with a grace period.
@@ -66,7 +68,7 @@ This repository holds the open-source **demo** of Harrow's Wake. The **full game
 Because Tylerlikesps4 is the sole copyright owner, the same core can be offered under the GPL here and under commercial terms in the full game (dual licensing).
 
 ## Contributing
-Bug reports and pull requests are welcome. Keep the PSX look, keep `godot --headless -- --smoke` and `-- --flow` passing, and only add assets that are CC0 (credit them in CREDITS.md).
+Bug reports and pull requests are welcome. Keep the PSX look, keep `godot --headless -- --smoke`, `-- --flow` and `-- --regress` passing, and only add assets that are CC0 (credit them in CREDITS.md).
 
 **Contributor agreement:** by submitting a contribution you agree that it is licensed to the project under the GPL v3 *and* that Tylerlikesps4 may relicense it under other terms (including in the commercial full game).
 
@@ -75,11 +77,11 @@ The project mixes **C#** and **GDScript**, so it needs the **Godot 4.3 .NET edit
 1. Install **Godot 4.3 .NET** (godotengine.org/download/archive/4.3-stable, the ".NET" download) and the **.NET 8 SDK** (dotnet.microsoft.com).
 2. Clone this repo and run `dotnet build HarrowsWake.sln` once (or press Build in the editor).
 3. Open Godot, **Import**, pick `project.godot`, press **F5**.
-3. Tests: `godot --headless -- --smoke` (automated playthrough) and `godot --headless -- --flow` (title/settings/pause/hiding). Screenshots: `xvfb-run -s "-screen 0 1280x960x24" godot -- --shots`.
+3. Tests: `godot --headless -- --smoke` (automated playthrough), `godot --headless -- --flow` (title/settings/pause/hiding) and `godot --headless -- --regress` (one check per fixed bug). Screenshots: `xvfb-run -s "-screen 0 1280x960x24" godot -- --shots`; render cost per room: `xvfb-run ... godot --rendering-driver opengl3 -- --perf`.
 4. Export: install the 4.3 **.NET (mono)** export templates (Editor > Manage Export Templates), then Project > Export > Windows Desktop or Android. Android needs the Android SDK + a debug keystore set in Editor Settings.
 
 ## Install the APK
-On your Android phone, open the newest [Release](https://github.com/Tylerlikesps4/Harrows-Wake/releases/latest), download `HarrowsWake.apk`, open it, and allow installs from your browser when asked (Settings > Apps > your browser > Install unknown apps). It's an arm64 debug-signed build; uninstall the old version first if Android refuses to update it.
+On your Android phone, open the newest [Release](https://github.com/Tylerlikesps4/Harrows-Wake/releases/latest), download `HarrowsWake.apk`, open it, and allow installs from your browser when asked (Settings > Apps > your browser > Install unknown apps). It's an arm64 build. Until the repo has a stable signing key (see below), each build is signed with a new key, so uninstall the old version first if Android refuses to update it.
 
 ## Code map
 **C# (`csharp/`, project `HarrowsWake.csproj` / `HarrowsWake.sln`, Godot.NET.Sdk 4.3.0, net8.0):**
@@ -95,9 +97,9 @@ C# members use snake_case names on purpose, so GDScript calls them directly (`Ga
 - `scripts/lib.gd`: PSX materials and prop placement
 - `scripts/player.gd`, `zombie.gd`: survivors and the Tallow-folk. `touch.gd`: floating stick + buttons. `hud.gd`: HUD
 - `scripts/synth.gd`: the two synthesised sounds (phone ring, music box). `shaders/`: PSX surface and post shaders
-- `tests/smoke.gd`: automated playthrough (`godot --headless -- --smoke`); `tests/flow.gd`: title/intro/pause/flashlight/hiding (`godot --headless -- --flow`); `tests/shots.gd`: screenshot tour (`xvfb-run godot -- --shots`)
+- `tests/smoke.gd`: automated playthrough (`godot --headless -- --smoke`); `tests/flow.gd`: title/intro/pause/flashlight/hiding (`godot --headless -- --flow`); `tests/regress.gd`: regression checks for fixed bugs (`godot --headless -- --regress`); `tests/shots.gd`: screenshot tour (`xvfb-run godot -- --shots`); `tests/perf.gd`: draw calls per room
 
 Full game (from the GDD): Elias and the cryo lab, the Otherworld bell shift, the raptor rift, more endings.
 
 ## Builds
-Every push to `main` runs GitHub Actions on the Godot 4.3 .NET image: `dotnet build`, the automated playthrough and flow test, then a Windows .exe and an Android APK (debug-signed, arm64), published as a Release. (C# on Android is marked experimental by Godot 4.3.)
+Every push to `main` runs GitHub Actions on the Godot 4.3 .NET image: `dotnet build`, the playthrough, flow and regression tests, then a Windows .exe and an Android APK (release template, arm64), published as a Release. To make every APK install over the previous one, add repo secrets `ANDROID_KEYSTORE_B64` (base64 of a keystore), `ANDROID_KEY_ALIAS` and `ANDROID_KEYSTORE_PASSWORD`; without them CI signs each build with a throwaway key. (C# on Android is marked experimental by Godot 4.3.)

@@ -19,6 +19,11 @@ var breath_lbl: Label
 var overlay: ColorRect
 var ov_title: Label
 var ov_body: Label
+var fps: Label
+var get_bg: ColorRect
+var get_title: Label
+var get_body: Label
+var get_t: float = 0.0
 var msg_t: float = 0.0
 var tut_t: float = 0.0
 var W: float = 320.0
@@ -47,6 +52,19 @@ func _ready() -> void:
 	breath_lbl = _label(Vector2(110, 156), 8, HORIZONTAL_ALIGNMENT_CENTER, Vector2(100, 12))
 	breath_lbl.text = "BREATH"
 	set_breath(-1.0)
+	# "Item get" banner: name + description, slides in and fades.
+	get_bg = _rect(Vector2(40, 150), Vector2(240, 34), Color(0.02, 0.02, 0.02, 0.8))
+	get_title = _label(Vector2(44, 152), 10, HORIZONTAL_ALIGNMENT_CENTER, Vector2(232, 12))
+	get_title.add_theme_color_override("font_color", Color(0.95, 0.82, 0.45))
+	get_body = _label(Vector2(44, 165), 7, HORIZONTAL_ALIGNMENT_CENTER, Vector2(232, 18))
+	get_body.autowrap_mode = TextServer.AUTOWRAP_WORD
+	get_title.reparent(get_bg)
+	get_body.reparent(get_bg)
+	get_title.position = Vector2(4, 2)
+	get_body.position = Vector2(4, 15)
+	get_bg.visible = false
+	fps = _label(Vector2(6, 228), 8, HORIZONTAL_ALIGNMENT_LEFT, Vector2(60, 10))
+	fps.visible = false
 	overlay = _rect(Vector2.ZERO, Vector2(320, 240), Color(0, 0, 0, 0.88))
 	ov_title = _label(Vector2(10, 20), 16, HORIZONTAL_ALIGNMENT_CENTER, Vector2(300, 30))
 	ov_body = _label(Vector2(16, 56), 9, HORIZONTAL_ALIGNMENT_LEFT, Vector2(288, 176))
@@ -71,6 +89,8 @@ func _layout() -> void:
 	breath_bar.position.x = cx - 30
 	breath_lbl.position.x = cx - 50
 	overlay.size = s
+	get_bg.position.x = cx - 120
+	fps.position.y = s.y - 12
 	ov_title.position.x = cx - 150
 	ov_body.position.x = cx - 144
 
@@ -117,6 +137,19 @@ func show_tutorial(text: String, secs: float = 6.0) -> void:
 	tut_t = secs
 
 
+func item_get(name: String, desc: String) -> void:
+	get_title.text = name.to_upper()
+	get_body.text = desc
+	get_bg.visible = true
+	get_bg.modulate.a = 0.0
+	get_bg.scale = Vector2(1.0, 0.2)
+	get_bg.pivot_offset = get_bg.size / 2.0
+	var tw := create_tween()
+	tw.tween_property(get_bg, "modulate:a", 1.0, 0.15)
+	tw.parallel().tween_property(get_bg, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	get_t = 3.0
+
+
 func set_breath(v: float) -> void:
 	var on := v >= 0.0
 	breath_bg.visible = on
@@ -159,6 +192,14 @@ func update_status(who: String, hp: int, max_hp: int, ammo_count: int, stamina: 
 
 
 func _process(delta: float) -> void:
+	if fps.visible:
+		fps.text = "%d FPS" % Engine.get_frames_per_second()
+	if get_t > 0.0:
+		get_t -= delta
+		if get_t < 0.4:
+			get_bg.modulate.a = maxf(0.0, get_t / 0.4)
+		if get_t <= 0.0:
+			get_bg.visible = false
 	if msg_t > 0.0:
 		msg_t -= delta
 		if msg_t <= 0.0:

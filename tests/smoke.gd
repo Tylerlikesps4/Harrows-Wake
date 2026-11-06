@@ -24,10 +24,42 @@ func _ready() -> void:
 	# below cover real time (fixes the old "Jenny moves" flake).
 	Engine.max_fps = 60
 	Game.tank_controls = true
+	if Game.smoke_phase == 2:
+		set_process(false)
+		_after_retry.call_deferred()
+
+
+func _after_retry() -> void:
+	# We are in a freshly reloaded scene after choosing "Retry from last save".
+	for i in 10:
+		await get_tree().process_frame
+	ok(Game.mode == "play" and Game.state["active"] == "dana" and Game.state["tube"]["jenny"].has("Tower Key") and Game.state["files"].size() == 2 and int(Game.state["hp"]["dana"]) > 0, "Death -> Retry from last save restores the save (mode %s, active %s)" % [Game.mode, Game.state["active"]])
+	Game.smoke_phase = 0
+	print("SMOKE DONE")
+	get_tree().quit()
 
 func _process(_d: float) -> void:
 	f += 1
 	match f:
+		3:
+			ok(m.current_objective().contains("Playroom"), "Objective reminder at start: " + m.current_objective())
+			# Settings: change brightness, check it reaches the shader and user://settings.cfg.
+			var old_b: float = Game.settings["brightness"]
+			m._open_settings(true)
+			ok(Game.mode == "menu" and m.menu_title == "SETTINGS" and m.menu_options.size() >= 13, "Settings menu opens (%d rows)" % m.menu_options.size())
+			m._adjust_setting(0, 1)
+			var cf := ConfigFile.new()
+			cf.load(Game.SETTINGS_PATH)
+			ok(is_equal_approx(float(m.post_mat.get_shader_parameter("gamma")), old_b + 0.1) and is_equal_approx(float(cf.get_value("settings", "brightness", -1.0)), old_b + 0.1), "Brightness applies and persists to settings.cfg")
+			m._adjust_setting(7, 1)
+			ok(m.players["dana"].flashlight.shadow_enabled == bool(Game.settings["shadows"]), "Shadow toggle reaches the flashlight")
+			m._adjust_setting(7, 1)
+			m._adjust_setting(0, -1)
+			Game.load_settings()
+			ok(is_equal_approx(float(Game.settings["brightness"]), old_b), "Settings reload from disk")
+			m._close_settings()
+			ok(Game.mode == "title", "Settings BACK returns to title")
+			Game.tank_controls = true
 		5:
 			Game.mode = "play"
 			m.hud.hide_overlay()
@@ -73,6 +105,22 @@ func _process(_d: float) -> void:
 			tp("dana", key)
 			m._interact(key)
 			ok(Game.has_item("dana", "Tower Key"), "Dana gets Tower Key")
+			ok(m.hud.get_bg.visible and m.hud.get_title.text == "TOWER KEY", "Item-get banner shows name + description")
+			ok(m.current_objective().contains("send the Tower Key"), "Objective updates: " + m.current_objective())
+			# Lore files
+			for fid in ["file_meridian", "file_choir"]:
+				var it = near_item(fid)
+				ok(not it.is_empty(), "Lore file placed: " + fid)
+				if not it.is_empty():
+					tp("dana", it)
+					m._interact(it)
+			ok(Game.mode == "note" and m.hud.ov_title.text == "Field Report: The Stone", "Reading a file shows it")
+			m.hud.hide_overlay()
+			Game.mode = "play"
+			ok(Game.state["files"].has("file_meridian") and Game.state["files"].has("file_choir"), "Files are kept for re-reading")
+			m._open_inventory()
+			ok(m.hud.ov_body.text.contains("9mm") and m.hud.ov_body.text.contains("Files (2)"), "Inventory shows item descriptions + files")
+			m._close_menu()
 			var w = m.next_waypoint("dana", m._off("dana", Vector2i(0,0), Vector3.ZERO), m._off("dana", Vector2i(2,0), Vector3.ZERO), [])
 			ok(w.distance_to(m._off("dana", Vector2i(0,0), Vector3(4,0,0))) < 0.1, "Pathfinding via doorway")
 			tp("dana", near_item("tube_dana"))
@@ -117,7 +165,15 @@ func _process(_d: float) -> void:
 			m._interact(ex)
 			ok(Game.mode == "win", "Chapel exit -> WIN screen")
 			print(m.hud.ov_body.text)
+			m._show_end_card()
+			var t: String = m.end_card_text()
+			ok(Game.mode == "endcard" and t.contains("THANKS FOR PLAYING") and t.contains("demo") and t.contains("coming soon") and m.credits_lbl.text.contains("Quaternius"), "Demo end card + credits roll")
 		320:
 			ok(Game.load_game() and Game.state["inv"]["jenny"].has("Tower Key") == false, "Save loads (snapshot before key handoff)")
-			print("SMOKE DONE")
-			get_tree().quit()
+			# Death -> retry from last save (continues in the reloaded scene).
+			Game.mode = "play"
+			m.die("Test death.")
+		400:
+			ok(Game.mode == "dead" and m.hud.overlay.visible and m.hud.ov_body.text.contains("Retry from last save"), "Death screen offers Retry from last save")
+			Game.smoke_phase = 2
+			m.death_choose(0)

@@ -59,6 +59,7 @@ func setup(p_style: String, p_body: Node3D) -> void:
 			mi.set_surface_override_material(i, m)
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	_accessories()
+	_face()
 	play_anim(idle_name())
 
 
@@ -147,7 +148,7 @@ static func _region_color(st: String, p: Vector3, front: float, rng: float) -> C
 				c = Color(0.36, 0.28, 0.34) if ax < 0.62 else skin
 			elif is_head:
 				c = skin
-				if v > 0.905 or (fz < 0.02 and v > 0.85):
+				if v > 0.955 or (fz < 0.02 and v > 0.85) or (ax > 0.06 and v > 0.88):
 					c = Color(0.16, 0.1, 0.07)
 			elif v > 0.74 and fz < -0.02 and ax < 0.17:
 				c = Color(0.16, 0.1, 0.07)       # hair down the back
@@ -167,7 +168,7 @@ static func _region_color(st: String, p: Vector3, front: float, rng: float) -> C
 				c = Color(0.16, 0.2, 0.34)
 			elif is_head:
 				c = skin
-				if v > 0.915 or (fz < -0.01 and v > 0.87):
+				if v > 0.965 or (fz < -0.01 and v > 0.87) or (ax > 0.07 and v > 0.92):
 					c = Color(0.22, 0.13, 0.08)
 			elif v > 0.49:
 				c = Color(0.16, 0.2, 0.34)
@@ -311,13 +312,14 @@ func _accessories() -> void:
 				_mesh(h, _cyl(0.13, 0.15, 0.24, 8), Vector3(0, 0.32, 0), hm)
 				# Faint eye-shine so he reads in the dark.
 				var em := _mat(Color(1.0, 0.85, 0.55), 3.0, "plastered_wall_02")
-				for sx in [-0.04, 0.04]:
+				for sx in [-0.03, 0.03]:
 					var s := SphereMesh.new()
 					s.radius = 0.014
 					s.height = 0.028
 					s.radial_segments = 4
 					s.rings = 2
-					_mesh(h, s, Vector3(sx, 0.09, 0.1), em)
+					_mesh(h, s, Vector3(sx, 0.118, 0.118), em)
+				extras["eyes"] = em
 			var b := _attach(hand_l, "Bell")
 			if b:
 				var bm := _mat(Color(0.85, 0.65, 0.3), 0.15)
@@ -349,3 +351,119 @@ func _accessories() -> void:
 					s.radial_segments = 6
 					s.rings = 3
 					_mesh(sp, s, d[0], wm)
+
+
+# ------------------------------------------------------------ faces
+# Low-res painted faces (32x40 px, nearest filtered) on a quad riding the head
+# bone, PS1 style. Pixel rows map to head-local height: row 0 = +0.19 m,
+# row 40 = -0.03 m (eyes ~row 13, mouth ~row 31).
+
+static var _face_cache: Dictionary = {}
+
+
+static func _px(img: Image, x: int, y: int, c: Color) -> void:
+	if x >= 0 and y >= 0 and x < img.get_width() and y < img.get_height():
+		img.set_pixel(x, y, c)
+
+
+static func _rectpx(img: Image, x: int, y: int, w: int, h: int, c: Color) -> void:
+	for yy in h:
+		for xx in w:
+			_px(img, x + xx, y + yy, c)
+
+
+static func face_image(st: String) -> Image:
+	var img := Image.create(32, 40, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var dark := Color(0.08, 0.05, 0.04)
+	var white := Color(0.86, 0.84, 0.8)
+	match st:
+		"jenny", "dana":
+			var brow := Color(0.16, 0.1, 0.07) if st == "jenny" else Color(0.2, 0.12, 0.07)
+			var iris := Color(0.22, 0.3, 0.38) if st == "jenny" else Color(0.26, 0.17, 0.1)
+			var lip := Color(0.62, 0.32, 0.32) if st == "jenny" else Color(0.5, 0.3, 0.27)
+			var shade := Color(0.55, 0.4, 0.36, 1.0) if st == "jenny" else Color(0.52, 0.38, 0.32, 1.0)
+			for ex in [9, 19]:
+				_rectpx(img, ex, 12, 4, 2, white)       # eye whites
+				_rectpx(img, ex + 1, 12, 2, 2, iris)   # iris
+				_px(img, ex + 1, 12, dark)              # pupil
+				_rectpx(img, ex, 11, 4, 1, dark)       # lash line
+				_rectpx(img, ex - (1 if st == "dana" else 0), 8, 5, 1 if st == "jenny" else 2, brow)
+				_rectpx(img, ex, 14, 4, 1, shade)      # tired under-eyes
+			_rectpx(img, 15, 17, 1, 6, shade)          # nose ridge shadow
+			_rectpx(img, 14, 23, 3, 1, shade)
+			_rectpx(img, 13, 29, 6, 1, lip)
+			_rectpx(img, 14, 30, 4, 1, lip.darkened(0.25))
+			if st == "jenny":
+				_rectpx(img, 6, 22, 3, 2, Color(0.82, 0.55, 0.5))   # cold-flushed cheeks
+				_rectpx(img, 23, 22, 3, 2, Color(0.82, 0.55, 0.5))
+				# a few strands of fringe over the brow
+				for x in [8, 9, 12, 13, 17, 21, 22]:
+					_rectpx(img, x, 3, 1, 4 + (x % 3), brow)
+		"bellman":
+			# A cracked porcelain mask, eye holes, a mouth sewn shut with black thread.
+			var mask := Color(0.88, 0.86, 0.8)
+			for y in 40:
+				for x in 32:
+					var dx := (x + 0.5 - 16.0) / 13.0
+					var dy := (y + 0.5 - 19.0) / 19.5
+					if dx * dx + dy * dy <= 1.0:
+						var c := mask.darkened(0.06 * float((x * 7 + y * 13) % 3))
+						if dx * dx + dy * dy > 0.82:
+							c = c.darkened(0.35)
+						img.set_pixel(x, y, c)
+			for ex in [8, 19]:
+				_rectpx(img, ex, 11, 5, 4, Color(0.01, 0.01, 0.01))
+				_rectpx(img, ex + 1, 15, 3, 1, Color(0.3, 0.05, 0.05))   # weeping red
+				_rectpx(img, ex + 2, 16, 1, 3, Color(0.35, 0.04, 0.04))
+			_rectpx(img, 9, 30, 14, 1, Color(0.12, 0.03, 0.03))         # seam
+			for x in range(10, 23, 3):
+				_rectpx(img, x, 28, 1, 5, Color(0.02, 0.02, 0.02))     # stitches
+			# crack from the brow down the cheek
+			for i in 12:
+				_px(img, 22 + int(i * 0.4), 2 + i * 2, Color(0.25, 0.22, 0.2))
+				_px(img, 22 + int(i * 0.4), 3 + i * 2, Color(0.25, 0.22, 0.2))
+		"tallow":
+			# Melted features: sagging sockets at different heights, a gaping mouth, drips.
+			var sock := Color(0.12, 0.05, 0.02)
+			_rectpx(img, 8, 12, 5, 4, sock)
+			_rectpx(img, 9, 16, 3, 3, sock)
+			_rectpx(img, 19, 15, 5, 3, sock)
+			_rectpx(img, 20, 18, 2, 4, sock)
+			_px(img, 10, 13, Color(0.9, 0.85, 0.5))
+			_rectpx(img, 12, 26, 8, 6, Color(0.1, 0.03, 0.02))
+			_rectpx(img, 13, 32, 5, 3, Color(0.1, 0.03, 0.02))
+			for x in [7, 14, 24]:
+				_rectpx(img, x, 20, 2, 12, Color(0.55, 0.42, 0.28))
+	return img
+
+
+func _face() -> void:
+	var head := "Head" if style == "tallow" else "DEF-head"
+	var ba := _attach(head, "Face")
+	if ba == null:
+		return
+	if not _face_cache.has(style):
+		var m := StandardMaterial3D.new()
+		m.albedo_texture = ImageTexture.create_from_image(face_image(style))
+		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+		m.alpha_scissor_threshold = 0.5
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_PER_VERTEX
+		m.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+		if style == "bellman":
+			m.emission_enabled = true
+			m.emission_texture = m.albedo_texture
+			m.emission = Color(1, 1, 1)
+			m.emission_energy_multiplier = 0.18
+		_face_cache[style] = m
+	var q := QuadMesh.new()
+	q.size = Vector2(0.17, 0.22) if style != "bellman" else Vector2(0.19, 0.24)
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = _face_cache[style]
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = Vector3(0, 0.08, 0.121 if style != "bellman" else 0.128)
+	mi.rotation.x = -0.12   # follow the brow's slope a little
+	ba.add_child(mi)
+	extras["face"] = mi

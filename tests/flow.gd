@@ -15,6 +15,27 @@ func _process(d: float) -> void:
 		0:
 			if t > 0.5:
 				ok(Game.mode == "title", "Title screen up")
+				ok(m._title_opts().has("SETTINGS"), "Title has SETTINGS")
+				m.title_index = m._title_opts().find("SETTINGS")
+				Input.action_press("interact"); step = 20
+		20:
+			Input.action_release("interact")
+			ok(Game.mode == "menu" and m.menu_title == "SETTINGS", "Settings opens from title"); step = 21
+		21:
+			Input.action_press("move_right"); step = 22
+		22:
+			Input.action_release("move_right")
+			ok(m.menu_index == 0 and Game.settings["brightness"] > 1.05 or Game.settings["brightness"] >= 1.8, "Right arrow raises brightness (%.1f)" % Game.settings["brightness"])
+			Input.action_press("move_left"); step = 23
+		23:
+			Input.action_release("move_left")
+			Input.action_press("cancel"); step = 24
+		24:
+			Input.action_release("cancel")
+			ok(Game.mode == "title", "BACK returns to the title"); step = 25; t = 0
+		25:
+			if t > 0.2:
+				m.title_index = 0
 				Input.action_press("interact"); step = 1
 		1:
 			Input.action_release("interact")
@@ -31,7 +52,15 @@ func _process(d: float) -> void:
 				Input.action_press("pause"); step = 5
 		5:
 			Input.action_release("pause")
-			ok(Game.mode == "menu" and m.menu_title == "PAUSED", "Pause menu opens"); step = 6
+			ok(Game.mode == "menu" and m.menu_title == "PAUSED" and m.hud.ov_body.text.contains("CURRENT OBJECTIVE"), "Pause menu opens with objective")
+			m.menu_cb.call(2)
+			ok(m.menu_title == "SETTINGS", "Settings opens from pause")
+			step = 30
+		30:
+			Input.action_press("cancel"); step = 31
+		31:
+			Input.action_release("cancel")
+			ok(m.menu_title == "PAUSED", "Settings BACK returns to pause"); step = 6
 		6:
 			Input.action_press("cancel"); step = 7
 		7:

@@ -158,7 +158,7 @@ func _animate(hs: float) -> void:
 	elif state == S.NOTICE:
 		mesh_root.play_anim("Idle_Torch", 0.1, 2.5)   # raises the bell
 	elif hs > 0.2:
-		mesh_root.play_anim("Walk_Formal", 0.25, clampf(hs / 1.25, 0.7, 2.3))
+		mesh_root.play_anim("Walk_Formal", 0.25, clampf(hs / 1.05, 0.6, 3.0))   # stride-matched (no foot sliding)
 	else:
 		mesh_root.play_anim("Idle_Torch", 0.3, 0.6)
 

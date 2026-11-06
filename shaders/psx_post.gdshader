@@ -12,6 +12,7 @@ uniform float distort = 0.0;
 uniform float slit = 0.0;      // 0 = off, 1 = peering through wardrobe doors
 uniform float grain = 0.05;
 uniform float vignette = 1.5;
+uniform float gamma = 1.0;      // brightness setting (>1 lifts the shadows)
 
 float bayer4(vec2 p) {
 	int x = int(mod(p.x, 4.0));
@@ -41,6 +42,7 @@ void fragment() {
 		c.r = texture(screen_tex, uv + vec2(o, 0.0)).r;
 		c.b = texture(screen_tex, uv - vec2(o, 0.0)).b;
 	}
+	c = pow(max(c, vec3(0.0)), vec3(1.0 / gamma)) * mix(1.0, 1.08, clamp(gamma - 1.0, 0.0, 1.0));
 	c += (hash(FRAGCOORD.xy + fract(TIME) * 100.0) - 0.5) * grain;
 	c += bayer4(FRAGCOORD.xy) / color_depth;
 	c = floor(c * color_depth + 0.5) / color_depth;

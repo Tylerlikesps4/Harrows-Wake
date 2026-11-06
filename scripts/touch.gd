@@ -45,10 +45,23 @@ func _ready() -> void:
 	_button("inventory", "ITEMS", 11, Color(0.55, 0.55, 0.55))
 	_button("pause", "II", 10, Color(0.55, 0.55, 0.55))
 	_button("cancel", "BACK", 10, Color(0.55, 0.55, 0.55))
-	visible = DisplayServer.is_touchscreen_available() or "--touch" in OS.get_cmdline_user_args()
+	visible = (DisplayServer.is_touchscreen_available() and bool(Game.settings.get("touch", true))) or "--touch" in OS.get_cmdline_user_args()
 	get_viewport().size_changed.connect(_layout)
-	_layout()
+	apply_settings()
 	_reset_stick()
+
+
+## Button size/opacity and on/off from the settings menu.
+func apply_settings() -> void:
+	var sc: float = float(Game.settings.get("btn_size", 1.0))
+	var op: float = float(Game.settings.get("btn_opacity", 0.8))
+	for a in buttons.keys():
+		var b: TouchScreenButton = buttons[a]
+		b.scale = Vector2(sc, sc)
+		b.modulate.a = op
+	if DisplayServer.is_touchscreen_available():
+		visible = bool(Game.settings.get("touch", true))
+	_layout()
 
 
 func _layout() -> void:
@@ -81,8 +94,12 @@ func _reset_stick() -> void:
 
 func _place(action: String, center: Vector2) -> void:
 	var b: TouchScreenButton = buttons[action]
-	var r: float = b.get_meta("r")
-	b.position = center - Vector2(r, r)
+	var sc: float = float(Game.settings.get("btn_size", 1.0))
+	var r: float = b.get_meta("r") * sc
+	var s: Vector2 = get_viewport().get_visible_rect().size
+	# Bigger buttons spread out from the screen corner so they don't overlap.
+	var c: Vector2 = Vector2(s.x, s.y) + (center - Vector2(s.x, s.y)) * sc if center.y > s.y * 0.5 else Vector2(s.x + (center.x - s.x) * sc, center.y * sc)
+	b.position = c - Vector2(r, r)
 
 
 func _process(_d: float) -> void:
@@ -128,6 +145,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _set_vec(v: Vector2) -> void:
+	v *= float(Game.settings.get("stick_sens", 1.0))
 	if v.length() < DEAD:
 		v = Vector2.ZERO
 	else:

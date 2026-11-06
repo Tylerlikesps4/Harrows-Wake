@@ -2,6 +2,20 @@ extends Node
 ## Global game state for Harrow's Wake (autoload "Game").
 
 const SAVE_PATH := "user://harrows_wake_save.json"
+const SETTINGS_PATH := "user://settings.cfg"
+const DEFAULTS := {
+	"brightness": 1.0,     # gamma-style lift in the post shader (0.6 - 1.8)
+	"master": 10, "music": 8, "sfx": 9,   # 0 - 10
+	"stick_sens": 1.0,     # touch stick sensitivity (0.5 - 2.0)
+	"btn_size": 1.0,       # touch button scale (0.7 - 1.5)
+	"btn_opacity": 0.8,    # touch button opacity (0.2 - 1.0)
+	"tank": false,
+	"crt": true,
+	"invert_y": false,     # invert the stick's up/down
+	"shadows": true,       # flashlight shadows
+	"fps": false,          # FPS counter
+	"touch": true,         # on-screen controls (touchscreens only)
+}
 
 var state: Dictionary = {}
 var mode: String = "title"   # title, play, note, menu, struggle, dead, win
@@ -9,15 +23,74 @@ var tank_controls: bool = true
 var skip_title: bool = false
 var input_kind: String = "keyboard"   # keyboard, gamepad, touch
 var crt_on: bool = true
+var settings: Dictionary = {}
+var smoke_phase: int = 0   # lets the smoke test survive a scene reload (death retry)
+signal settings_changed
 
 
 func _ready() -> void:
 	_setup_input()
-	# Phones: camera-relative movement by default (tank controls are F1 / pause menu).
+	_setup_buses()
 	if DisplayServer.is_touchscreen_available():
-		tank_controls = false
 		input_kind = "touch"
+	load_settings()
 	new_game()
+
+
+# ---------------------------------------------------------------- settings
+
+func _setup_buses() -> void:
+	for b in ["Music", "SFX"]:
+		if AudioServer.get_bus_index(b) < 0:
+			AudioServer.add_bus()
+			var i := AudioServer.bus_count - 1
+			AudioServer.set_bus_name(i, b)
+			AudioServer.set_bus_send(i, "Master")
+
+
+func load_settings() -> void:
+	settings = DEFAULTS.duplicate()
+	# Phones: camera-relative movement and no shadows by default (60 fps target).
+	if DisplayServer.is_touchscreen_available():
+		settings["shadows"] = false
+	else:
+		settings["tank"] = true
+	var cf := ConfigFile.new()
+	if cf.load(SETTINGS_PATH) == OK:
+		for k in DEFAULTS.keys():
+			if cf.has_section_key("settings", k):
+				settings[k] = cf.get_value("settings", k)
+	apply_settings()
+
+
+func save_settings() -> void:
+	var cf := ConfigFile.new()
+	for k in settings.keys():
+		cf.set_value("settings", k, settings[k])
+	cf.save(SETTINGS_PATH)
+
+
+func set_setting(k: String, v) -> void:
+	settings[k] = v
+	apply_settings()
+	save_settings()
+
+
+func apply_settings() -> void:
+	tank_controls = bool(settings["tank"])
+	crt_on = bool(settings["crt"])
+	_vol("Master", int(settings["master"]))
+	_vol("Music", int(settings["music"]))
+	_vol("SFX", int(settings["sfx"]))
+	settings_changed.emit()
+
+
+func _vol(bus: String, v: int) -> void:
+	var i := AudioServer.get_bus_index(bus)
+	if i < 0:
+		return
+	AudioServer.set_bus_mute(i, v <= 0)
+	AudioServer.set_bus_volume_db(i, linear_to_db(clampf(v / 10.0, 0.0, 1.0)) if v > 0 else -80.0)
 
 
 func _input(event: InputEvent) -> void:
@@ -52,6 +125,7 @@ func new_game() -> void:
 		"light": {"dana": false, "jenny": false},
 		"saves": 0,
 		"time": 0.0,
+		"files": [],
 	}
 
 

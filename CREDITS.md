@@ -41,4 +41,6 @@ All from Poly Haven (https://polyhaven.com/license, CC0): old_wood_floor, decrep
 Synthesised in code (no suitable CC0 recording found): the telephone ring and the music box (`scripts/synth.gd`).
 
 ## Code
-Game code, shaders and level layouts: Harrow's Wake project.
+Game code, shaders and level layouts: Copyright (C) 2026 Tylerlikesps4, GNU GPL v3 (see LICENSE). Character faces are painted in code (`scripts/actor_model.gd`). Engine: Godot 4.3 (MIT).
+
+Assets keep their own licenses (all CC0, above); the GPL applies to the code only.

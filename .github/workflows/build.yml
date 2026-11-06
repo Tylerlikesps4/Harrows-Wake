@@ -67,7 +67,7 @@ jobs:
         with:
           tag_name: build-${{ github.run_number }}
           name: Harrow's Wake build ${{ github.run_number }}
-          body: Automatic build of the vertical slice. On Android, download HarrowsWake.apk and allow installs from your browser. On Windows, run HarrowsWake.exe.
+          body: Free demo build. On Android, download HarrowsWake.apk and allow installs from your browser. On Windows, run HarrowsWake.exe.
           files: |
             out/HarrowsWake.apk
             out/HarrowsWake.exe

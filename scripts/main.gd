@@ -1,5 +1,5 @@
 extends Node3D
-## Harrow's Wake - vertical slice.
+## Harrow's Wake - free demo.
 ## Builds both maps (Police Station for Dana, Orphanage for Jenny) in code from
 ## CC0 textures and props, runs fixed cameras, interactions, menus, the tube
 ## network, panic, scripted scares, the title screen, pause menu and saves.
@@ -31,7 +31,7 @@ var MAPS := {
 			Vector2i(1, 0): {"name": "West Hall", "floor": "floor_tiles_06", "fcol": Color(0.75, 0.75, 0.7), "wall": "blue_plaster_weathered", "wcol": Color(0.55, 0.62, 0.55), "step": "concrete", "light": Color(0.8, 0.95, 0.75), "fog": Color(0.04, 0.07, 0.05), "cam": 0, "flicker": true},
 			Vector2i(2, 0): {"name": "Evidence Room", "floor": "concrete_floor_worn_001", "fcol": Color(0.7, 0.72, 0.75), "wall": "painted_metal_shutter", "wcol": Color(0.5, 0.55, 0.62), "step": "concrete", "light": Color(0.65, 0.78, 1.0), "fog": Color(0.03, 0.045, 0.07), "cam": 3, "needs_power": true},
 			Vector2i(1, 1): {"name": "Records Room", "floor": "old_wood_floor", "fcol": Color(0.8, 0.65, 0.5), "wall": "decrepit_wallpaper", "wcol": Color(0.75, 0.68, 0.55), "step": "wood", "light": Color(1.0, 0.85, 0.6), "fog": Color(0.07, 0.05, 0.03), "cam": 1, "safe": true},
-			Vector2i(1, -1): {"name": "Chief's Office", "floor": "dirty_carpet", "fcol": Color(0.85, 0.55, 0.42), "wall": "decrepit_wallpaper", "wcol": Color(0.6, 0.5, 0.42), "step": "carpet", "light": Color(1.0, 0.72, 0.45), "fog": Color(0.06, 0.04, 0.03), "cam": 2},
+			Vector2i(1, -1): {"name": "Chief's Office", "floor": "dirty_carpet", "fcol": Color(0.85, 0.55, 0.42), "wall": "decrepit_wallpaper", "wcol": Color(0.6, 0.5, 0.42), "step": "carpet", "light": Color(1.0, 0.72, 0.45), "fog": Color(0.06, 0.04, 0.03), "cam": 2, "energy": 3.0},
 		},
 		"links": [[Vector2i(0, 0), Vector2i(1, 0), ""], [Vector2i(1, 0), Vector2i(2, 0), "evidence"], [Vector2i(1, 0), Vector2i(1, 1), ""], [Vector2i(1, 0), Vector2i(1, -1), ""]],
 	},
@@ -43,7 +43,7 @@ var MAPS := {
 			Vector2i(1, 0): {"name": "Corridor", "floor": "dark_wooden_planks", "fcol": Color(0.75, 0.6, 0.5), "wall": "damaged_plaster", "wcol": Color(0.6, 0.6, 0.55), "step": "wood", "light": Color(0.75, 0.82, 0.65), "fog": Color(0.04, 0.05, 0.04), "cam": 3, "flicker": true},
 			Vector2i(2, 0): {"name": "Chapel", "floor": "floor_tiles_06", "fcol": Color(0.65, 0.55, 0.52), "wall": "damaged_plaster", "wcol": Color(0.55, 0.42, 0.42), "step": "concrete", "light": Color(1.0, 0.45, 0.3), "fog": Color(0.08, 0.025, 0.02), "cam": 0, "amb": "amb_chapel"},
 			Vector2i(1, 1): {"name": "Mail Room", "floor": "old_wood_floor", "fcol": Color(0.8, 0.65, 0.5), "wall": "plastered_wall_02", "wcol": Color(0.7, 0.65, 0.52), "step": "wood", "light": Color(1.0, 0.86, 0.6), "fog": Color(0.07, 0.05, 0.03), "cam": 2, "safe": true},
-			Vector2i(1, -1): {"name": "Playroom", "floor": "dirty_carpet", "fcol": Color(0.85, 0.62, 0.78), "wall": "decrepit_wallpaper", "wcol": Color(0.65, 0.5, 0.6), "step": "carpet", "light": Color(0.8, 0.65, 0.95), "fog": Color(0.05, 0.03, 0.07), "cam": 1},
+			Vector2i(1, -1): {"name": "Playroom", "floor": "dirty_carpet", "fcol": Color(0.85, 0.62, 0.78), "wall": "decrepit_wallpaper", "wcol": Color(0.65, 0.5, 0.6), "step": "carpet", "light": Color(0.8, 0.65, 0.95), "fog": Color(0.05, 0.03, 0.07), "cam": 1, "energy": 2.8},
 		},
 		"links": [[Vector2i(0, 0), Vector2i(1, 0), ""], [Vector2i(1, 0), Vector2i(2, 0), ""], [Vector2i(1, 0), Vector2i(1, 1), ""], [Vector2i(1, 0), Vector2i(1, -1), ""]],
 	},
@@ -54,6 +54,9 @@ var NOTES := {
 	"note_toll": ["Dispatch Memo", "Oct 31, 11:52 PM.\nMultiple calls: the Meridian bell is ringing on its own. Callers report 'singing' coming up through the storm drains. Two callers say their husbands 'went soft, like candle wax.'\nAll units to Bell Street.\n- Dispatch"],
 	"note_chief": ["Chief's Log", "Meridian's people sealed the lab and left us the town.\n\nThe old mail tubes still run from our Records Room to St. Agnes Orphanage on Hill Road. If anyone's alive up there, that's how we reach them.\n\nThe evidence room's mag-lock blew its fuse. Spares went up to the orphanage with the Christmas lights last year. Of course they did.\n- Chief Harlan"],
 	"note_jenny": ["Torn Diary Page", "If you find this, I'm hiding.\n\nThe tall man with the bell walks the halls. Don't run near him. He HEARS you. Don't shine a light at him either.\n\nThe wardrobes are safe if he didn't see you get in. Hold your breath in there, but not too long.\n\nHe never comes into the Mail Room. The tube there goes all the way to the police station.\n- J."],
+	"file_meridian": ["Meridian Biotech - Internal", "MERIDIAN BIOTECHNOLOGY - HARROW'S WAKE SITE\nPROJECT CHOIR / Phase III summary (partial)\n\nThe specimen recovered from the quarry (\"the Choir Stone\") emits a standing tone below human hearing. Subjects exposed for 40+ hours report hearing singing. Tissue samples show softening of fat and muscle, \"a tallow-like state\".\n\nThe tone can be carried and focused by bronze. Requisition approved: one hand bell, cast on site.\n\nDo NOT allow paired subjects within 30 m of each other while exposed. See incident 7 (both deceased).\n- Dr. E. Voss"],
+	"file_choir": ["Field Report: The Stone", "Records copy. Harrow's Wake PD, 1974.\n\nQuarry workers dug up a dark stone \"the size of a church door\" that rang when struck - and kept ringing after. Three men walked into the flooded pit that night, humming.\n\nThe county sold the site to a company called Meridian. Case closed by order of the mayor.\n\nHandwritten in the margin, newer ink: IT ISN'T RINGING. IT'S ANSWERING."],
+	"file_bellman": ["St. Agnes Ledger", "ST. AGNES ORPHANAGE - STAFF LEDGER\n\nMr. Abel Crane, bell-ringer and caretaker. Rings the hand bell for meals, prayers and lights-out. The children say he never sleeps.\n\n(added later, a different hand)\nThe men from Meridian took Mr. Crane to the hill for \"tests\" and gave him a new bell. He came back wearing a white face. He doesn't ring for meals anymore. He rings when one of us is out of bed.\n\nWhen the bell stops, he is close."],
 	"page_typed": ["The Typewriter", "The paper in the roller is still warm. One line, typed over and over until the ribbon tore:\n\nHE HEARS THE TUBES  HE HEARS THE TUBES  HE HEARS THE TUBES  HE HEARS THE TUBES  HE HEARS THE\n\nThe keys are still moving."],
 }
 
@@ -107,6 +110,22 @@ var props: Dictionary = {}
 var hide_noise_t: float = 0.0
 var intro_t: float = -1.0
 var phantom: Node3D = null
+var menu_desc: Callable          # optional: description text for the highlighted option
+var menu_adjust: Callable        # optional: left/right adjusts the highlighted option
+var menu_back: Callable          # optional: what BACK does (default: close)
+var settings_from_title: bool = false
+var dead_index: int = 0
+var end_t: float = -1.0
+var credits_lbl: Label = null
+var map_roots: Dictionary = {}
+var muzzle_tex: ImageTexture = null
+var door_t: float = 0.0
+const ITEM_INFO := {
+	"Handgun": "Dana's 9mm service pistol. Hold AIM to lock on, FIRE to shoot. Three rounds drop a Tallow-folk.",
+	"Green Herb": "A bitter local herb. Restores 2 health. Select it here to use it.",
+	"Fuse": "A 30-amp cartridge fuse wrapped in Christmas tinsel. The station's evidence mag-lock needs one.",
+	"Tower Key": "A heavy iron key on a tag: BELL TOWER - ST. AGNES. It opens the chapel padlock.",
+}
 
 
 func _ready() -> void:
@@ -121,6 +140,8 @@ func _ready() -> void:
 	_build_scares()
 	_build_ui()
 	_apply_state()
+	Game.settings_changed.connect(_apply_settings)
+	_apply_settings()
 	if "--smoke" in OS.get_cmdline_user_args():
 		add_child(load("res://tests/smoke.gd").new())
 	if "--flow" in OS.get_cmdline_user_args():
@@ -270,6 +291,7 @@ func _build_map(map: String) -> void:
 	var root := Node3D.new()
 	root.name = map
 	add_child(root)
+	map_roots[map] = root
 	var rooms: Dictionary = MAPS[map]["rooms"]
 	for c in rooms.keys():
 		var r: Dictionary = rooms[c]
@@ -286,7 +308,7 @@ func _build_map(map: String) -> void:
 				_build_wall(root, map, ctr, d, false, r, "")
 		# Ceiling bulb: a lamp shade, an emissive bulb and a dim light.
 		Lib.prop(root, "lampSquareCeiling", ctr + Vector3(0, WALL_H - 0.45, 0), 0.0, 0.5, 0)
-		var energy := 1.7
+		var energy: float = r.get("energy", 1.7)
 		var lt := _add_light(root, "%s_%s" % [map, c], ctr + Vector3(0, 2.45, 0), r["light"], energy, 10.5, r.get("flicker", false))
 		if r.get("needs_power", false) and not Game.flag("power"):
 			lt.light_energy = 0.08
@@ -302,6 +324,27 @@ func _build_map(map: String) -> void:
 		cam.set_meta("base", cam.transform)
 		cameras[map][c] = cam
 	_build_props(map, root)
+
+
+## A moonlit window on an outer wall: glowing pane, cross bars, and a cool spot
+## light falling across the floor (light motivation for dark rooms).
+func _moon_window(root: Node3D, map: String, c: Vector2i, o: Vector3, rot_y: float, target: Vector3) -> void:
+	var pos := _off(map, c, o)
+	var q := _glow_quad(root, Vector2(1.3, 1.5), pos, Vector3(0, rot_y, 0), Color(0.32, 0.42, 0.62), false)
+	q.name = "moon_window"
+	var bar := Vector3(0.06, 1.45, 0.08) if absf(sin(rot_y)) > 0.5 else Vector3(0.08, 1.45, 0.06)
+	box(root, bar, pos, "dark_wooden_planks", Color(0.2, 0.15, 0.12), 1, false)
+	var hb := Vector3(0.06, 0.08, 1.4) if absf(sin(rot_y)) > 0.5 else Vector3(1.4, 0.08, 0.06)
+	box(root, hb, pos, "dark_wooden_planks", Color(0.2, 0.15, 0.12), 1, false)
+	var moon := SpotLight3D.new()
+	moon.light_color = Color(0.55, 0.65, 1.0)
+	moon.light_energy = 2.2
+	moon.spot_range = 8.0
+	moon.spot_angle = 32.0
+	root.add_child(moon)
+	var inward := (cell_center(map, c) - pos)
+	inward.y = 0.0
+	moon.look_at_from_position(pos + Vector3(0, 0.8, 0) + inward.normalized() * 0.25, _off(map, c, target), Vector3.UP)
 
 
 func _wall_segment(root: Node3D, size: Vector3, center: Vector3, r: Dictionary, along_x: bool) -> void:
@@ -394,7 +437,7 @@ func _build_props(map: String, root: Node3D) -> void:
 		box(root, Vector3(2.5, 1.8, 0.5), _off(map, E, Vector3(2.0, 0.9, -3.5)), "rusty_metal_02", Color(0.45, 0.47, 0.5), 2, true, 0.0, 1.2)
 		_p(root, map, E, "cardboardBoxClosed", Vector3(3.3, 0, 2.0), 0.2, 0.7)
 		_p(root, map, E, "cardboardBoxClosed", Vector3(3.1, 0, 1.2), 1.1, 0.6)
-		_p(root, map, E, "desk", Vector3(-2.8, 0, -2.6), PI / 2.0, 1.4)
+		props["file_meridian"] = _p(root, map, E, "desk", Vector3(-2.8, 0, -2.6), PI / 2.0, 1.4)
 		# Chief's office: desk, chair, bookcase, the TV left on.
 		var C := Vector2i(1, -1)
 		var dk := box(root, Vector3(1.8, 0.8, 0.9), _off(map, C, Vector3(0, 0.4, -2.4)), "dark_wooden_planks", wood * 0.9, 2, true, 0.0, 0.9)
@@ -406,6 +449,11 @@ func _build_props(map: String, root: Node3D) -> void:
 		var tv := _add_light(root, "", _off(map, C, Vector3(3.0, 1.2, -2.7)), Color(0.5, 0.65, 1.0), 0.7, 3.5, true)
 		tv.set_meta("tv", true)
 		_p(root, map, C, "radio", Vector3(-0.5, 0.8, -2.45), 0.2, 0.4, 0, Color(0.4, 0.35, 0.3))
+		# Light motivation: a green banker's lamp on the desk and moonlight through the blinds.
+		_p(root, map, C, "lampRoundTable", Vector3(-0.75, 0.8, -2.2), 0.0, 0.32, 0)
+		_glow_quad(root, Vector2(0.18, 0.1), _off(map, C, Vector3(-0.75, 1.12, -2.2)), Vector3(-PI / 2.0, 0, 0), Color(1.0, 0.8, 0.45))
+		_add_light(root, "", _off(map, C, Vector3(-0.75, 1.35, -1.9)), Color(1.0, 0.78, 0.48), 3.2, 7.5)
+		_moon_window(root, map, C, Vector3(3.88, 1.8, 0.8), -PI / 2.0, Vector3(0.5, 0, 0.6))
 		props["ammo_chief"] = _p(root, map, C, "cardboardBoxOpen", Vector3(-3.0, 0, 2.5), 0.0, 0.7)
 		_p(root, map, C, "rugRectangle", Vector3(0, 0.0, 0.5), PI / 2.0, 3.0, 0, Color(0.5, 0.35, 0.3))
 		# Records: bookcases, cabinets, a desk lamp by the typewriter.
@@ -417,7 +465,7 @@ func _build_props(map: String, root: Node3D) -> void:
 		_p(root, map, R, "lampRoundTable", Vector3(1.8, 0.8, 3.0), 0.0, 0.3, 0)
 		_add_light(root, "", _off(map, R, Vector3(1.8, 1.4, 2.7)), Color(1.0, 0.75, 0.45), 0.9, 4.0)
 		_p(root, map, R, "chair", Vector3(2.4, 0, 2.1), PI, 0.55)
-		_p(root, map, R, "cardboardBoxClosed", Vector3(2.8, 0, -3.3), 0.3, 0.7)
+		props["file_choir"] = _p(root, map, R, "cardboardBoxClosed", Vector3(2.8, 0, -3.3), 0.3, 0.7)
 	else:
 		# Dormitory: iron-frame beds in a row, a bunk bed, a moonlit window.
 		var D := Vector2i(0, 0)
@@ -469,7 +517,7 @@ func _build_props(map: String, root: Node3D) -> void:
 		var M := Vector2i(1, 1)
 		_p(root, map, M, "bookcaseOpen", Vector3(-3.55, 0, 1.0), PI / 2.0, 1.2)
 		_p(root, map, M, "bookcaseOpen", Vector3(-3.55, 0, -0.4), PI / 2.0, 1.2)
-		_p(root, map, M, "table", Vector3(-0.8, 0, -1.5), 0.2, 1.5)
+		props["file_bellman"] = _p(root, map, M, "table", Vector3(-0.8, 0, -1.5), 0.2, 1.5)
 		_p(root, map, M, "cardboardBoxClosed", Vector3(-2.6, 0, 3.2), 0.4, 0.7)
 		_p(root, map, M, "cardboardBoxOpen", Vector3(-1.8, 0, 3.4), 0.0, 0.6)
 		_p(root, map, M, "lampRoundTable", Vector3(1.8, 0.8, 3.0), 0.0, 0.3, 0)
@@ -485,6 +533,12 @@ func _build_props(map: String, root: Node3D) -> void:
 		_p(root, map, P, "pillow", Vector3(2.6, 0, 1.2), 0.3, 0.6, 0)
 		_p(root, map, P, "rugRectangle", Vector3(0.5, 0, 0.0), 0.0, 3.4, 0, Color(0.6, 0.45, 0.6))
 		_p(root, map, P, "bookcaseOpen", Vector3(3.55, 0, 0.6), -PI / 2.0, 1.1, 2, Color(0.9, 0.8, 0.85))
+		# Light motivation: a little moon-and-stars nightlight by the cots, and a moonlit window.
+		box(root, Vector3(0.05, 0.16, 0.12), _off(map, P, Vector3(-3.87, 0.4, 2.2)), "plastered_wall_02", Color(0.9, 0.85, 0.7), 1, false)
+		_glow_quad(root, Vector2(0.14, 0.14), _off(map, P, Vector3(-3.83, 0.42, 2.2)), Vector3(0, PI / 2.0, 0), Color(1.0, 0.75, 0.45))
+		var nl := _add_light(root, "", _off(map, P, Vector3(-3.5, 0.5, 2.2)), Color(1.0, 0.62, 0.42), 2.6, 6.5)
+		nl.set_meta("nightlight", true)
+		_moon_window(root, map, P, Vector3(-1.2, 1.8, -3.88), 0.0, Vector3(0.0, 0, 0.5))
 
 
 func _add_inter(map: String, c: Vector2i, offset: Vector3, kind: String, id: String, label: String) -> Dictionary:
@@ -596,6 +650,10 @@ func _build_interactables() -> void:
 	_add_inter("jenny", Vector2i(1, 1), Vector3(2.4, 0, 2.9), "typewriter", "tw_jenny", "Use typewriter")
 	_add_inter("jenny", Vector2i(1, 1), Vector3(3.75, 0, -1.5), "tube", "tube_jenny", "Use mail tube")
 	_add_inter("jenny", Vector2i(2, 0), Vector3(3.85, 0, 0), "exit", "chapel_exit", "Open chapel doors")
+	# Lore files (Meridian Biotech, the Choir Stone, the Bellman).
+	_add_inter("dana", Vector2i(2, 0), Vector3(-2.8, 0.8, -2.6), "note", "file_meridian", "Read file")
+	_add_inter("dana", Vector2i(1, 1), Vector3(2.8, 0.75, -3.3), "note", "file_choir", "Read report")
+	_add_inter("jenny", Vector2i(1, 1), Vector3(-0.8, 0.8, -1.5), "note", "file_bellman", "Read ledger")
 
 
 func _capsule(body: CollisionObject3D, r: float, h: float) -> void:
@@ -628,7 +686,7 @@ func _build_players() -> void:
 		p.collision_layer = 4
 		p.collision_mask = 1 | 2 | 8
 		if who == "dana":
-			p.walk_speed = 2.1
+			p.walk_speed = 1.85
 			p.run_speed = 4.3
 		_capsule(p, 0.3, 1.7)
 		add_child(p)
@@ -861,15 +919,53 @@ func fire(p, target) -> void:
 	Game.state["ammo"] = int(Game.state["ammo"]) - 1
 	play_sfx("gunshot", null, -2.0, randf_range(0.95, 1.05))
 	shake = maxf(shake, 0.25)
+	var muzzle: Vector3 = p.muzzle_position()
 	var fl := OmniLight3D.new()
 	fl.light_color = Color(1.0, 0.85, 0.5)
 	fl.light_energy = 5.0
 	fl.omni_range = 7.0
 	add_child(fl)
-	fl.global_position = p.global_position + Vector3(0, 1.3, 0) - p.global_transform.basis.z * 0.6
+	fl.global_position = muzzle
 	get_tree().create_timer(0.06).timeout.connect(fl.queue_free)
+	# Muzzle flash: a star-shaped billboard for two frames.
+	var mf := MeshInstance3D.new()
+	var q := QuadMesh.new()
+	q.size = Vector2(0.45, 0.45)
+	mf.mesh = q
+	var mm := StandardMaterial3D.new()
+	mm.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mm.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mm.albedo_texture = _muzzle_tex()
+	mm.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	mm.albedo_color = Color(1.0, 0.85, 0.55)
+	mf.material_override = mm
+	mf.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mf)
+	mf.global_position = muzzle
+	mf.rotation.z = randf() * TAU
+	get_tree().create_timer(0.07).timeout.connect(mf.queue_free)
+	p.recoil()
 	if target != null:
 		target.hit(1)
+		target.knockback(p.global_position)
+
+
+func _muzzle_tex() -> ImageTexture:
+	if muzzle_tex != null:
+		return muzzle_tex
+	var img := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+	for y in 16:
+		for x in 16:
+			var d := Vector2(x - 7.5, y - 7.5)
+			var a := atan2(d.y, d.x)
+			var r := d.length() / 8.0
+			var spike := 0.55 + 0.45 * absf(cos(a * 3.0))
+			var v := clampf(1.0 - r / spike, 0.0, 1.0)
+			img.set_pixel(x, y, Color(v, v * 0.9, v * 0.6, v))
+	muzzle_tex = ImageTexture.create_from_image(img)
+	return muzzle_tex
 
 
 func hurt_player(map: String, n: int) -> void:
@@ -955,13 +1051,35 @@ func die(reason: String) -> void:
 	players[who].act("Death01", 99.0)
 	play_sfx("bell_toll", null, -4.0, 0.8)
 	distort = 0.6
-	var body := reason + "\n\n"
-	body += ("%s Continue from last save" if Game.has_save() else "%s Try again") % Game.glyph("interact")
+	dead_index = 0
+	set_meta("death_reason", reason)
 	var tw := create_tween()
 	tw.tween_method(func(v: float) -> void: post_mat.set_shader_parameter("fade", v), 0.0, 0.6, 1.5)
 	get_tree().create_timer(1.2).timeout.connect(func() -> void:
 		if Game.mode == "dead":
-			hud.show_overlay("YOU DIED", body, Color(0.8, 0.05, 0.05), 0.6))
+			_render_death())
+
+
+func death_options() -> Array:
+	return ["Retry from last save" if Game.has_save() else "Restart the demo", "Quit to title"]
+
+
+func _render_death() -> void:
+	var body: String = str(get_meta("death_reason", "")) + "\n\n"
+	var opts := death_options()
+	for i in opts.size():
+		body += ("> " if i == dead_index else "   ") + opts[i] + "\n"
+	body += "\n%s choose" % Game.glyph("interact")
+	hud.show_overlay("YOU DIED", body, Color(0.8, 0.05, 0.05), 0.6)
+
+
+func death_choose(i: int) -> void:
+	if i == 0:
+		Game.restart(Game.has_save())
+	else:
+		Game.mode = "title"
+		Game.skip_title = false
+		get_tree().reload_current_scene()
 
 
 func _win() -> void:
@@ -977,21 +1095,98 @@ func _win() -> void:
 		rank = "B"
 	elif secs < 1500.0:
 		rank = "C"
-	var body := "Jenny slips the Tower Key into the padlock. The chain falls. Outside, the fog is moving like breath.\n\nSomewhere above the town, the bell starts to ring again.\n\nTIME  %02d:%02d\nSAVES  %d\nRANK  %s\n\nEND OF VERTICAL SLICE - thank you for playing.\n%s Play again" % [int(secs) / 60, int(secs) % 60, saves, rank, Game.glyph("interact")]
+	var body := "Jenny slips the Tower Key into the padlock. The chain falls. Outside, the fog is moving like breath.\n\nSomewhere above the town, the bell starts to ring again.\n\nTIME  %02d:%02d\nSAVES  %d\nRANK  %s\n\n%s Continue" % [int(secs) / 60, int(secs) % 60, saves, rank, Game.glyph("interact")]
 	play_sfx("bell_toll", null, -6.0, 0.7)
 	hud.show_overlay("HARROW'S WAKE", body, Color(0.85, 0.7, 0.35))
 
 
+# ---------------------------------------------------------------- demo end card
+
+const CREDITS := """HARROW'S WAKE - FREE DEMO
+
+Design, code and direction
+Tylerlikesps4
+
+Characters and animation
+Quaternius - Universal Animation Library (CC0)
+
+Furniture and graveyard props
+Kenney - Furniture Kit, Graveyard Kit (CC0)
+
+Textures
+Poly Haven (CC0)
+
+Sound effects
+Kenney, rubberduck, kurt, AntumDeluge, bart,
+Cassie-OrbitGames, remaxim, Nocturnal_Vanguard,
+bretbernhoft, techiew, Kresiek (CC0, via OpenGameArt)
+
+Title music
+\"The Surreal Truth\" - Joth (CC0)
+
+Engine
+Godot Engine 4.3 (MIT)
+
+Code licensed GPL-3.0. Assets keep their own licenses.
+Full credits: CREDITS.md
+
+Thank you for playing."""
+
+
+func _show_end_card() -> void:
+	Game.mode = "endcard"
+	end_t = 0.0
+	hud.show_overlay("THANKS FOR PLAYING", "Thanks for playing the Harrow's Wake demo -\nfull game coming soon.\n\nComing in the full game: Elias and the cryo lab, the Otherworld, the bell tower, more endings.", Color(0.85, 0.7, 0.35), 0.96)
+	hud.ov_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if credits_lbl == null:
+		credits_lbl = Label.new()
+		credits_lbl.add_theme_font_size_override("font_size", 8)
+		credits_lbl.add_theme_color_override("font_color", Color(0.75, 0.72, 0.66))
+		credits_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		credits_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		hud.overlay.add_child(credits_lbl)
+	credits_lbl.text = CREDITS
+	credits_lbl.size = Vector2(hud.W, 400)
+	credits_lbl.position = Vector2(0, 250)
+	credits_lbl.visible = true
+	play_sfx("bell_toll", null, -8.0, 0.6)
+
+
+func end_card_text() -> String:
+	return hud.ov_title.text + " " + hud.ov_body.text
+
+
+func _end_card_process(delta: float) -> void:
+	end_t += delta
+	title_music.volume_db = lerpf(title_music.volume_db, -12.0, minf(1.0, delta))
+	if end_t > 4.0 and credits_lbl != null:
+		credits_lbl.position.y -= delta * 14.0
+		var fadeout := clampf((end_t - 4.0) / 2.0, 0.0, 1.0)
+		hud.ov_body.modulate.a = 1.0 - fadeout
+		hud.ov_title.modulate.a = 1.0 - fadeout
+	var finished := credits_lbl != null and credits_lbl.position.y < -credits_lbl.get_minimum_size().y
+	if (Input.is_action_just_pressed("interact") and end_t > 1.0) or finished:
+		Game.mode = "title"
+		Game.skip_title = false
+		get_tree().reload_current_scene()
+
+
 # ---------------------------------------------------------------- title
 
-func _title_body() -> String:
+func _title_opts() -> Array:
 	var opts := ["NEW GAME"]
 	if Game.has_save():
 		opts.append("CONTINUE")
+	opts.append("SETTINGS")
+	return opts
+
+
+func _title_body() -> String:
+	var opts := _title_opts()
 	var body := "\n\n\n\n\n\n"
 	for i in opts.size():
 		body += ("              > " if i == title_index else "                 ") + opts[i] + "\n"
-	body += "\n\n      %s select      Headphones recommended." % Game.glyph("interact")
+	body += "\n\n      %s select      Headphones recommended.\n                         FREE DEMO" % Game.glyph("interact")
 	return body
 
 
@@ -1011,14 +1206,20 @@ func _title_process(delta: float) -> void:
 		play_sfx("bell_toll", null, -12.0, randf_range(0.55, 0.65))
 		for lt in candle_lights:
 			lt.light_energy = 0.2
-	var n := 2 if Game.has_save() else 1
+	var opts := _title_opts()
+	var n := opts.size()
 	if Input.is_action_just_pressed("move_forward") or Input.is_action_just_pressed("move_back"):
-		title_index = (title_index + 1) % n
+		title_index = (title_index + (1 if Input.is_action_just_pressed("move_back") else n - 1)) % n
 		play_sfx("menu", null, -8.0)
 		hud.show_overlay("HARROW'S WAKE", _title_body(), Color(0.75, 0.12, 0.1), 0.25)
 	if Input.is_action_just_pressed("interact"):
-		if title_index == 1:
+		var choice: String = opts[title_index]
+		if choice == "CONTINUE":
 			Game.restart(true)
+			return
+		if choice == "SETTINGS":
+			play_sfx("menu", null, -6.0)
+			_open_settings(true)
 			return
 		hud.hide_overlay()
 		Game.new_game()
@@ -1037,6 +1238,12 @@ func _announce() -> void:
 func _show_note(key: String) -> void:
 	var n: Array = NOTES[key]
 	Game.mode = "note"
+	if key != "intro":
+		if not Game.state.has("files"):
+			Game.state["files"] = []
+		if not Game.state["files"].has(key):
+			Game.state["files"].append(key)
+		Game.set_flag("read_" + key)
 	var body: String = n[1]
 	if body.contains("%s"):
 		body = body % Game.glyph("interact")
@@ -1058,15 +1265,34 @@ func open_menu(title: String, header: String, options: Array, cb: Callable) -> v
 	menu_options = options
 	menu_index = 0
 	menu_cb = cb
+	menu_desc = Callable()
+	menu_adjust = Callable()
+	menu_back = Callable()
 	Game.mode = "menu"
 	_render_menu()
 
 
 func _render_menu() -> void:
 	var body := menu_header + "\n\n" if menu_header != "" else ""
-	for i in menu_options.size():
+	var first := 0
+	var last := menu_options.size()
+	const WIN := 8
+	if menu_options.size() > WIN + 1:
+		first = clampi(menu_index - WIN / 2, 0, menu_options.size() - WIN)
+		last = first + WIN
+		body += ("   ...\n" if first > 0 else "\n")
+	for i in range(first, last):
 		body += ("> " if i == menu_index else "   ") + str(menu_options[i]) + "\n"
-	body += "\n%s choose   %s back" % [Game.glyph("interact"), Game.glyph("cancel")]
+	if last < menu_options.size():
+		body += "   ...\n"
+	elif first > 0:
+		body += "\n"
+	if menu_desc.is_valid():
+		body += "\n" + str(menu_desc.call(menu_index)) + "\n"
+	if menu_adjust.is_valid():
+		body += "\nLeft/Right change   %s toggle   %s back" % [Game.glyph("interact"), Game.glyph("cancel")]
+	else:
+		body += "\n%s choose   %s back" % [Game.glyph("interact"), Game.glyph("cancel")]
 	hud.show_overlay(menu_title, body)
 
 
@@ -1080,33 +1306,153 @@ func _other(who: String) -> String:
 	return "jenny" if who == "dana" else "dana"
 
 
+func current_objective() -> String:
+	var f := func(n: String) -> bool: return Game.flag(n)
+	if Game.has_item("jenny", "Tower Key"):
+		return "Jenny: reach the Chapel and unlock its doors with the Tower Key."
+	if Game.state["tube"]["jenny"].has("Tower Key"):
+		return "Switch to Jenny (typewriter) and collect the Tower Key from the Mail Room tube."
+	if Game.has_item("dana", "Tower Key"):
+		return "Dana: send the Tower Key to Jenny through the Records Room mail tube."
+	if f.call("power"):
+		return "Dana: take the Tower Key from the Evidence Room."
+	if Game.has_item("dana", "Fuse"):
+		return "Dana: put the Fuse in the fuse box in the West Hall (beware the Tallow-folk)."
+	if Game.state["tube"]["dana"].has("Fuse"):
+		return "Switch to Dana (typewriter) and collect the Fuse from the Records Room tube."
+	if Game.has_item("jenny", "Fuse"):
+		return "Jenny: send the Fuse to the police station through the Mail Room tube."
+	return "Jenny: find a fuse in the Playroom. Avoid the Bellman."
+
+
 func _open_pause() -> void:
-	var opts := ["Resume", "Controls: %s" % ("TANK (classic)" if Game.tank_controls else "MODERN (camera-relative)"), "CRT scanlines: %s" % ("ON" if Game.crt_on else "OFF"), "Touch controls: %s" % ("ON" if touch.visible else "OFF"), "Quit to title"]
-	open_menu("PAUSED", "%s - %s" % [NAMES[Game.state["active"]], cur_room_name], opts, func(i: int) -> void:
+	var opts := ["Resume", "Items", "Settings", "Quit to title"]
+	var hdr := "%s - %s\n\nCURRENT OBJECTIVE:\n%s" % [NAMES[Game.state["active"]], cur_room_name, current_objective()]
+	open_menu("PAUSED", hdr, opts, func(i: int) -> void:
 		match i:
 			1:
-				Game.tank_controls = not Game.tank_controls
-				_open_pause()
-				menu_index = 1
-				_render_menu()
+				_open_inventory()
 			2:
-				Game.crt_on = not Game.crt_on
-				post_mat.set_shader_parameter("scanlines", 0.12 if Game.crt_on else 0.0)
-				_open_pause()
-				menu_index = 2
-				_render_menu()
+				_open_settings(false)
 			3:
-				touch.visible = not touch.visible
-				_open_pause()
-				menu_index = 3
-				_render_menu()
-			4:
 				Game.mode = "title"
 				Game.skip_title = false
 				get_tree().reload_current_scene()
 			_:
 				_close_menu()
 	)
+
+
+# ---------------------------------------------------------------- settings
+
+const SETTING_ROWS := [
+	["brightness", "Brightness", "float", 0.6, 1.8, 0.1],
+	["master", "Master volume", "int", 0, 10, 1],
+	["music", "Music volume", "int", 0, 10, 1],
+	["sfx", "SFX volume", "int", 0, 10, 1],
+	["tank", "Controls", "bool"],
+	["invert_y", "Invert stick up/down", "bool"],
+	["crt", "CRT scanlines", "bool"],
+	["shadows", "Flashlight shadows", "bool"],
+	["fps", "FPS counter", "bool"],
+	["touch", "Touch controls", "bool"],
+	["stick_sens", "Touch stick sensitivity", "float", 0.5, 2.0, 0.1],
+	["btn_size", "Touch button size", "float", 0.7, 1.5, 0.1],
+	["btn_opacity", "Touch button opacity", "float", 0.2, 1.0, 0.1],
+]
+
+
+func _setting_label(row: Array) -> String:
+	var v = Game.settings[row[0]]
+	var txt := ""
+	match row[2]:
+		"bool":
+			if row[0] == "tank":
+				txt = "TANK (classic)" if v else "MODERN"
+			else:
+				txt = "ON" if v else "OFF"
+		"int":
+			txt = "%s%s" % ["|".repeat(int(v)), ".".repeat(10 - int(v))]
+		"float":
+			txt = "%.1f" % float(v)
+	return "%s:  < %s >" % [row[1], txt]
+
+
+func _settings_options() -> Array:
+	var o: Array = []
+	for row in SETTING_ROWS:
+		o.append(_setting_label(row))
+	o.append("Back")
+	return o
+
+
+func _adjust_setting(i: int, dir: int) -> void:
+	if i >= SETTING_ROWS.size():
+		return
+	var row: Array = SETTING_ROWS[i]
+	var k: String = row[0]
+	match row[2]:
+		"bool":
+			Game.set_setting(k, not bool(Game.settings[k]))
+		"int":
+			Game.set_setting(k, clampi(int(Game.settings[k]) + dir * int(row[5]), int(row[3]), int(row[4])))
+		"float":
+			Game.set_setting(k, snappedf(clampf(float(Game.settings[k]) + dir * float(row[5]), float(row[3]), float(row[4])), 0.01))
+	play_sfx("menu", null, -8.0, 1.1)
+	menu_options = _settings_options()
+	_render_menu()
+
+
+func _open_settings(from_title: bool) -> void:
+	settings_from_title = from_title
+	var keep := menu_index if menu_title == "SETTINGS" else 0
+	open_menu("SETTINGS", "", _settings_options(), func(i: int) -> void:
+		if i >= SETTING_ROWS.size():
+			_close_settings()
+		else:
+			_adjust_setting(i, 1)
+	)
+	menu_index = keep
+	menu_adjust = _adjust_setting
+	menu_back = _close_settings
+	menu_desc = func(i: int) -> String:
+		if i >= SETTING_ROWS.size():
+			return "Settings are saved automatically."
+		match SETTING_ROWS[i][0]:
+			"brightness":
+				return "Raise this if the rooms look too dark on your screen."
+			"tank":
+				return "Tank: up walks forward, left/right turn. Modern: move toward the stick."
+			"shadows":
+				return "Off is faster on phones (60 fps)."
+			"invert_y":
+				return "Swaps the stick's up and down for movement."
+		return ""
+	_render_menu()
+
+
+func _close_settings() -> void:
+	if settings_from_title:
+		settings_from_title = false
+		Game.mode = "title"
+		_show_title()
+	else:
+		_open_pause()
+		menu_index = 2
+		_render_menu()
+
+
+func _apply_settings() -> void:
+	if post_mat == null:
+		return
+	post_mat.set_shader_parameter("scanlines", 0.12 if Game.crt_on else 0.0)
+	post_mat.set_shader_parameter("gamma", float(Game.settings["brightness"]))
+	for who in players.keys():
+		players[who].flashlight.shadow_enabled = bool(Game.settings["shadows"])
+	if hud != null:
+		hud.fps.visible = bool(Game.settings["fps"])
+	if touch != null:
+		touch.apply_settings()
 
 
 func _open_typewriter() -> void:
@@ -1166,31 +1512,53 @@ func _open_inventory() -> void:
 	var who: String = Game.state["active"]
 	var inv: Array = Game.state["inv"][who]
 	var opts: Array = inv.duplicate()
+	var files: Array = Game.state.get("files", [])
+	opts.append("Files (%d)" % files.size())
 	opts.append("Leave")
 	var header := "%s   HP %d/%d" % [NAMES[who], int(Game.state["hp"][who]), MAX_HP[who]]
 	if who == "dana":
 		header += "   Handgun rounds: %d" % int(Game.state["ammo"])
 	open_menu("ITEMS", header, opts, func(i: int) -> void:
-		if i >= inv.size():
+		if i == inv.size():
+			_open_files()
+			return
+		if i > inv.size():
 			_close_menu()
 			return
 		var item: String = inv[i]
-		_close_menu()
 		match item:
 			"Green Herb":
+				_close_menu()
 				Game.take(who, item)
 				Game.state["hp"][who] = mini(MAX_HP[who], int(Game.state["hp"][who]) + 2)
 				play_sfx("pickup")
 				show_message("You feel a little better.")
-			"Handgun":
-				show_message("Service pistol, 9mm. %s to aim, %s to fire." % [Game.glyph("aim"), Game.glyph("fire")])
-			"Fuse":
-				show_message("A 30-amp cartridge fuse wrapped in Christmas tinsel.")
-			"Tower Key":
-				show_message("A heavy iron key on a tag: BELL TOWER - ST. AGNES.")
 			_:
-				show_message(item)
+				_close_menu()
+				show_message(ITEM_INFO.get(item, item), 4.0)
 	)
+	menu_desc = func(i: int) -> String:
+		if i < inv.size():
+			return "-- " + str(ITEM_INFO.get(inv[i], inv[i]))
+		if i == inv.size():
+			return "-- Documents you've found. Read them again here."
+		return ""
+	_render_menu()
+
+
+func _open_files() -> void:
+	var files: Array = Game.state.get("files", [])
+	var opts: Array = []
+	for k in files:
+		opts.append(NOTES[k][0])
+	opts.append("Back")
+	open_menu("FILES", "" if not files.is_empty() else "No documents yet.", opts, func(i: int) -> void:
+		if i < files.size():
+			_show_note(files[i])
+		else:
+			_open_inventory()
+	)
+	menu_back = _open_inventory
 
 
 func _switch_to(other: String) -> void:
@@ -1249,25 +1617,23 @@ func _interact(it: Dictionary) -> void:
 			interactables.erase(it)
 			Game.set_flag("picked_" + it["id"])
 			Game.give(who, it["label"])
-			if it.has("node"):
-				spin_nodes.erase(it["node"])
-				it["node"].queue_free()
+			_pickup_flourish(it)
 			play_sfx("pickup")
 			p.act("PickUp_Table", 0.6)
 			show_message("Picked up: " + it["label"])
+			hud.item_get(it["label"], ITEM_INFO.get(it["label"], ""))
 			if it["id"] == "fuse":
 				_on_fuse_taken()
 		"ammo":
 			interactables.erase(it)
 			Game.set_flag("picked_" + it["id"])
-			if it.has("node"):
-				spin_nodes.erase(it["node"])
-				it["node"].queue_free()
+			_pickup_flourish(it)
 			if who == "dana":
 				Game.state["ammo"] = int(Game.state["ammo"]) + 6
 			play_sfx("pickup")
 			p.act("PickUp_Table", 0.6)
 			show_message("Picked up: Handgun Ammo x6")
+			hud.item_get("Handgun Ammo x6", "Six 9mm rounds.")
 		"typewriter":
 			if it["id"] == "tw_jenny" and Game.flag("typer_armed") and not Game.flag("typer_read"):
 				Game.set_flag("typer_read")
@@ -1320,6 +1686,30 @@ func _interact(it: Dictionary) -> void:
 				show_message("The chapel doors are chained shut. The padlock is stamped BELL TOWER.")
 
 
+## The item lifts, spins fast and shrinks into a spark before it disappears.
+func _pickup_flourish(it: Dictionary) -> void:
+	if not it.has("node"):
+		return
+	var n: Node3D = it["node"]
+	spin_nodes.erase(n)
+	if not is_instance_valid(n):
+		return
+	var tw := create_tween()
+	tw.tween_property(n, "position:y", n.position.y + 0.45, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(n, "rotation:y", n.rotation.y + TAU * 1.5, 0.45)
+	tw.tween_property(n, "scale", Vector3.ONE * 0.05, 0.15)
+	tw.tween_callback(n.queue_free)
+	var sp := OmniLight3D.new()
+	sp.light_color = Color(1.0, 0.9, 0.6)
+	sp.light_energy = 1.5
+	sp.omni_range = 2.5
+	add_child(sp)
+	sp.global_position = n.global_position + Vector3(0, 0.3, 0)
+	var t2 := create_tween()
+	t2.tween_property(sp, "light_energy", 0.0, 0.5)
+	t2.tween_callback(sp.queue_free)
+
+
 func _unhide(p) -> void:
 	p.hidden_in = ""
 	p.visible = true
@@ -1355,7 +1745,7 @@ func _scare_room_enter(who: String, room: String) -> void:
 		musicbox_player.play()
 		var lt: OmniLight3D = room_lights.get("jenny_%s" % [Vector2i(1, -1)])
 		if lt:
-			lt.light_energy = 0.45
+			lt.light_energy = light_base.get(lt, 2.0) * 0.55
 		var bear: Node3D = props.get("bear")
 		if bear:
 			var to: Vector3 = players["jenny"].global_position - bear.global_position
@@ -1523,11 +1913,16 @@ func _process(delta: float) -> void:
 				menu_index = (menu_index + 1) % menu_options.size()
 				play_sfx("menu", null, -8.0)
 				_render_menu()
+			elif menu_adjust.is_valid() and (Input.is_action_just_pressed("move_left") or Input.is_action_just_pressed("move_right")):
+				menu_adjust.call(menu_index, -1 if Input.is_action_just_pressed("move_left") else 1)
 			elif Input.is_action_just_pressed("interact"):
 				play_sfx("menu", null, -4.0, 1.3)
 				menu_cb.call(menu_index)
 			elif Input.is_action_just_pressed("cancel") or Input.is_action_just_pressed("inventory") or (menu_title == "PAUSED" and Input.is_action_just_pressed("pause")):
-				_close_menu()
+				if menu_back.is_valid():
+					menu_back.call()
+				else:
+					_close_menu()
 		"struggle":
 			struggle_t -= delta
 			shake = maxf(shake, 0.3)
@@ -1541,18 +1936,28 @@ func _process(delta: float) -> void:
 				_end_struggle(false)
 			else:
 				_update_struggle()
-		"dead", "win":
+		"dead":
+			if Input.is_action_just_pressed("move_forward") or Input.is_action_just_pressed("move_back"):
+				dead_index = (dead_index + 1) % 2
+				play_sfx("menu", null, -8.0)
+				_render_death()
+			elif Input.is_action_just_pressed("interact") and hud.overlay.visible:
+				death_choose(dead_index)
+		"win":
 			if Input.is_action_just_pressed("interact"):
-				Game.restart(Game.mode == "dead")
+				_show_end_card()
+		"endcard":
+			_end_card_process(delta)
 		"play":
 			_play_process(delta)
 	_intro_process(delta)
-	if Game.mode != "title":
+	var in_title := Game.mode == "title" or (Game.mode == "menu" and settings_from_title)
+	if not in_title:
 		_update_camera()
 	_update_audio_and_fx(delta)
 	var who: String = Game.state["active"]
-	hud.set_hud_visible(Game.mode != "title")
-	hud.update_status(who, int(Game.state["hp"][who]), MAX_HP[who], int(Game.state["ammo"]), players[who].stamina, panic, who == "jenny" and Game.mode != "title")
+	hud.set_hud_visible(not in_title and Game.mode != "endcard")
+	hud.update_status(who, int(Game.state["hp"][who]), MAX_HP[who], int(Game.state["ammo"]), players[who].stamina, panic, who == "jenny" and not in_title and Game.mode != "endcard")
 
 
 func _play_process(delta: float) -> void:
@@ -1561,11 +1966,10 @@ func _play_process(delta: float) -> void:
 	var p = players[who]
 	_scare_process(delta)
 	if Input.is_action_just_pressed("toggle_controls"):
-		Game.tank_controls = not Game.tank_controls
+		Game.set_setting("tank", not Game.tank_controls)
 		show_message("Controls: " + ("TANK (classic)" if Game.tank_controls else "MODERN (camera-relative)"))
 	if Input.is_action_just_pressed("toggle_crt"):
-		Game.crt_on = not Game.crt_on
-		post_mat.set_shader_parameter("scanlines", 0.12 if Game.crt_on else 0.0)
+		Game.set_setting("crt", not Game.crt_on)
 	if Input.is_action_just_pressed("pause") and intro_t < 0.0:
 		_open_pause()
 		return
@@ -1631,12 +2035,17 @@ func _update_camera() -> void:
 			cur_amb = amb
 			amb_player.stream = _loop_stream(amb)
 			amb_player.play()
+		for mk in map_roots.keys():
+			map_roots[mk].visible = mk == who   # draw only the active survivor's building
 		if not first:
-			# a quick dip to black on each camera cut softens the jump
-			post_mat.set_shader_parameter("fade", 0.7)
+			# Door transition: a short fade through black with a creak.
+			door_t = 0.45
+			post_mat.set_shader_parameter("fade", 1.0)
 			var tw := create_tween()
-			tw.tween_method(func(v: float) -> void: post_mat.set_shader_parameter("fade", v), 0.7, 0.0, 0.18)
-			play_sfx("door", players[who].global_position, -20.0, randf_range(0.9, 1.1))
+			tw.tween_interval(0.12)
+			tw.tween_method(func(v: float) -> void: post_mat.set_shader_parameter("fade", v), 1.0, 0.0, 0.33)
+			play_sfx("creak", players[who].global_position, -10.0, randf_range(0.85, 1.05))
+			play_sfx("door", players[who].global_position, -16.0, randf_range(0.9, 1.1))
 		_scare_room_enter(who, cur_room_name)
 	# camera shake
 	var cam: Camera3D = cameras[who].get(c)
@@ -1669,8 +2078,9 @@ func _update_audio_and_fx(delta: float) -> void:
 	distort = move_toward(distort, 0.0, delta * 1.2)
 	post_mat.set_shader_parameter("distort", distort)
 	# Music & ambience mix.
-	var is_title := Game.mode == "title"
-	title_music.volume_db = lerpf(title_music.volume_db, -10.0 if is_title else -80.0, minf(1.0, delta * 1.5))
+	var is_title := Game.mode == "title" or (Game.mode == "menu" and settings_from_title)
+	if Game.mode != "endcard":
+		title_music.volume_db = lerpf(title_music.volume_db, -10.0 if is_title else -80.0, minf(1.0, delta * 1.5))
 	var rain: AudioStreamPlayer = get_node("rain")
 	rain.volume_db = lerpf(rain.volume_db, -14.0 if is_title else -32.0, minf(1.0, delta * 1.5))
 	amb_player.volume_db = lerpf(amb_player.volume_db, -80.0 if is_title else -12.0, minf(1.0, delta * 1.0))

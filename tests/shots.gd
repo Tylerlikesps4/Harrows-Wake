@@ -16,7 +16,7 @@ func _ready() -> void:
 func shot(n: String) -> void:
 	var img := get_viewport().get_texture().get_image()
 	img.resize(1280, 960, Image.INTERPOLATE_NEAREST)
-	img.save_png(OUT + "b4_" + n + ".png")
+	img.save_png(OUT + "b9_" + n + ".png")
 	print("shot ", n)
 func lineup(close: bool, mask: bool = false) -> void:
 	var base: Vector3 = m._off("dana", Vector2i(0,0), Vector3(0, 0.05, 0))
@@ -60,6 +60,33 @@ func play_setup() -> void:
 	m.bellman.global_position = Vector3(300,0,300)
 func _process(_d: float) -> void:
 	f += 1
+	if only == "rooms":
+		match f:
+			20:
+				play_setup()
+				Game.settings["doors"] = false
+				m._switch_to("dana")
+				var p = m.players["dana"]
+				p.global_position = m._off("dana", Vector2i(1,-1), Vector3(-0.8,0.05,0.6))
+				p.rotation.y = PI * 0.9
+			70:
+				m.post_mat.set_shader_parameter("fade", 0.0)
+				shot("chief")
+				m._switch_to("jenny")
+				var p = m.players["jenny"]
+				p.global_position = m._off("jenny", Vector2i(1,-1), Vector3(0.5,0.05,1.0))
+				p.rotation.y = PI
+			130:
+				m.post_mat.set_shader_parameter("fade", 0.0)
+				shot("playroom")
+				Game.settings["doors"] = true
+				m.door_cool = 0.0
+				m.players["jenny"].global_position = m._off("jenny", Vector2i(1,0), Vector3(0,0.05,-2.0))
+			148: shot("door_a")
+			158: shot("door_b")
+			168: shot("door_c")
+			190: get_tree().quit()
+		return
 	if only == "faces":
 		match f:
 			20: play_setup()

@@ -16,8 +16,10 @@ public partial class Bellman : CharacterBody3D
 {
 	public const int DORMANT = 0, PATROL = 1, INVESTIGATE = 2, CHASE = 3, SEARCH = 4, FOUND = 5, STUNNED = 6, LEAVE = 7, NOTICE = 8;
 
-	/// Enum mirror for GDScript: bellman.S.CHASE etc.
-	public GDict S => new GDict
+	/// Enum mirror for GDScript: bellman.S.CHASE etc. Built once (main.gd reads it
+	/// every frame inside the light loop, so it must not allocate a new dictionary).
+	GDict _s = null;
+	public GDict S => _s ??= new GDict
 	{
 		{ "DORMANT", DORMANT }, { "PATROL", PATROL }, { "INVESTIGATE", INVESTIGATE }, { "CHASE", CHASE },
 		{ "SEARCH", SEARCH }, { "FOUND", FOUND }, { "STUNNED", STUNNED }, { "LEAVE", LEAVE }, { "NOTICE", NOTICE },
@@ -43,10 +45,29 @@ public partial class Bellman : CharacterBody3D
 	public float notice_t = 0f;
 	public float grab_cd = 0f;
 	public float grabbing_t = 0f;
+	// Stuck watchdog: a target he can't reach (locked door, a prop in the way, a cell
+	// he won't enter) used to freeze him in place forever, bell ringing.
+	public float stuck_t = 0f;
+	public int stuck_n = 0;
+	Vector3 _stuck_pos = Vector3.Zero;
+	// Waypoint cache: the room-graph search runs a few times a second, not every tick.
+	Vector3 _wp = Vector3.Zero;
+	Vector3 _wp_for = new Vector3(1e6f, 0, 0);
+	float _wp_t = 0f;
 
-	GameState Game => GetNode<GameState>("/root/Game");
+	GameState _game = null;
+	GameState Game => _game ??= GetNode<GameState>("/root/Game");
 
-	Node3D Player => main.Get("players").AsGodotDictionary()[map].As<Node3D>();
+	Node3D _player = null;
+	Node3D Player
+	{
+		get
+		{
+			if (_player == null || !IsInstanceValid(_player))
+				_player = main.Get("players").AsGodotDictionary()[map].As<Node3D>();
+			return _player;
+		}
+	}
 
 	public override void _PhysicsProcess(double dd)
 	{
@@ -128,6 +149,16 @@ public partial class Bellman : CharacterBody3D
 			case FOUND:
 				spd = 2.6f;
 				target = p.GlobalPosition;
+				// He knows where you are - but not forever. If you got away (out of sight,
+				// not hiding, or into the Mail Room he won't enter) he gives up and searches.
+				if (sees || p.Get("hidden_in").AsString() != "") lost_t = 0f; else lost_t += delta;
+				if (lost_t > 4f || blocked.Contains((Vector2I)main.Call("cell_of", map, p.GlobalPosition)))
+				{
+					state = SEARCH;
+					target = last_seen;
+					timer = 4f;
+					break;
+				}
 				if (_flat_dist(p.GlobalPosition) < 1.6f && grab_cd <= 0f)
 				{
 					grabbing_t = 0.6f;
@@ -150,9 +181,17 @@ public partial class Bellman : CharacterBody3D
 
 		v = Velocity;
 		v.X = 0; v.Z = 0;
+		_watchdog(delta, spd > 0f && !_arrived(target));
 		if (spd > 0f && !_arrived(target))
 		{
-			var wp = (Vector3)main.Call("next_waypoint", map, GlobalPosition, target, blocked);
+			_wp_t -= delta;
+			if (_wp_t <= 0f || _wp_for.DistanceTo(target) > 0.5f || _flat_dist(_wp) < 0.9f)
+			{
+				_wp = (Vector3)main.Call("next_waypoint", map, GlobalPosition, target, blocked);
+				_wp_for = target;
+				_wp_t = 0.2f;
+			}
+			var wp = _wp;
 			var dir = wp - GlobalPosition;
 			dir.Y = 0;
 			if (dir.Length() > 0.05f)
@@ -219,6 +258,39 @@ public partial class Bellman : CharacterBody3D
 			mesh_root.Call("play_anim", "Idle_Torch", 0.3, 0.6);
 	}
 
+	/// If he has been trying to move for ~3 s but has barely moved, give up on the target.
+	void _watchdog(float delta, bool moving)
+	{
+		if (!moving)
+		{
+			stuck_t = 0f; stuck_n = 0; _stuck_pos = GlobalPosition;
+			return;
+		}
+		stuck_t += delta;
+		if (stuck_t < 1f) return;
+		stuck_t = 0f;
+		stuck_n = _flat_dist(_stuck_pos) < 0.25f ? stuck_n + 1 : 0;
+		_stuck_pos = GlobalPosition;
+		if (stuck_n < 3) return;
+		stuck_n = 0;
+		unstick();
+	}
+
+	public void unstick()
+	{
+		_wp_t = 0f;
+		switch (state)
+		{
+			case CHASE:
+			case FOUND:
+				state = SEARCH; target = GlobalPosition; timer = 3f; break;
+			case LEAVE:
+				state = DORMANT; dormant_t = (float)GD.RandRange(8.0, 14.0); break;
+			default:
+				_pick_patrol(); break;
+		}
+	}
+
 	bool _los(Node3D p) => main.Call("los", GlobalPosition + new Vector3(0, 1.7f, 0), p.GlobalPosition + new Vector3(0, 1f, 0)).AsBool();
 
 	void _perceive(Node3D p)
@@ -270,6 +342,7 @@ public partial class Bellman : CharacterBody3D
 			if (close && lost_t < 0.6f && _los(p))
 			{
 				state = FOUND;
+				lost_t = 0f;
 				main.Call("show_message", "He saw you hide...", 3.5);
 			}
 			else
@@ -284,7 +357,10 @@ public partial class Bellman : CharacterBody3D
 	public void on_scream()
 	{
 		if (state != STUNNED && state != LEAVE)
+		{
 			state = FOUND;
+			lost_t = 0f;
+		}
 	}
 
 	public void stun(float duration = 4f)

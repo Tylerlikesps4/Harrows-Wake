@@ -17,6 +17,7 @@ var joy_origin := Vector2.ZERO
 var joy_vec := Vector2.ZERO
 var buttons: Dictionary = {}
 var dana_only: Array = ["fire", "aim"]
+var touch_capable: bool = false
 
 
 func _ready() -> void:
@@ -45,7 +46,8 @@ func _ready() -> void:
 	_button("inventory", "ITEMS", 11, Color(0.55, 0.55, 0.55))
 	_button("pause", "II", 10, Color(0.55, 0.55, 0.55))
 	_button("cancel", "BACK", 10, Color(0.55, 0.55, 0.55))
-	visible = (DisplayServer.is_touchscreen_available() and bool(Game.settings.get("touch", true))) or "--touch" in OS.get_cmdline_user_args()
+	touch_capable = DisplayServer.is_touchscreen_available() or "--touch" in OS.get_cmdline_user_args()
+	visible = touch_capable and (bool(Game.settings.get("touch", true)) or "--touch" in OS.get_cmdline_user_args())
 	get_viewport().size_changed.connect(_layout)
 	apply_settings()
 	_reset_stick()
@@ -59,9 +61,21 @@ func apply_settings() -> void:
 		var b: TouchScreenButton = buttons[a]
 		b.scale = Vector2(sc, sc)
 		b.modulate.a = op
-	if DisplayServer.is_touchscreen_available():
+	if touch_capable:
 		visible = bool(Game.settings.get("touch", true))
+		if not visible:
+			release_all()
 	_layout()
+
+
+## Let go of everything (app sent to the background, controls hidden mid-drag).
+func release_all() -> void:
+	joy_index = -1
+	_set_vec(Vector2.ZERO)
+	for a in buttons.keys():
+		if Input.is_action_pressed(a):
+			Input.action_release(a)
+	_reset_stick()
 
 
 func _layout() -> void:
@@ -117,6 +131,17 @@ func _input(event: InputEvent) -> void:
 		visible = not visible
 		return
 	if not visible:
+		# "Touch controls OFF" is for a Bluetooth pad. Touching the screen brings them
+		# back, so a phone player who turned them off can still reach the menus
+		# (before build-9 that was a softlock with no way back to Settings).
+		if touch_capable and event is InputEventScreenTouch and event.pressed:
+			visible = true
+			_layout()
+		else:
+			return
+	elif not bool(Game.settings.get("touch", true)) and (event is InputEventJoypadButton or event is InputEventKey):
+		visible = false
+		release_all()
 		return
 	var half: float = get_viewport().get_visible_rect().size.x * 0.5
 	if event is InputEventScreenTouch:

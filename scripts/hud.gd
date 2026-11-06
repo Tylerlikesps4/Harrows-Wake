@@ -122,8 +122,9 @@ func _rect(pos: Vector2, sz: Vector2, col: Color) -> ColorRect:
 func set_hud_visible(v: bool) -> void:
 	for n in [status, ammo, prompt, stamina_bg, stamina_bar, message]:
 		n.visible = v
-	if not v:
-		tut_bg.visible = false
+	# The tutorial text used to linger on the title/credits without its box.
+	tutorial.visible = v
+	tut_bg.visible = v and tut_t > 0.0
 
 
 func show_message(text: String, secs: float = 3.0) -> void:
@@ -134,6 +135,7 @@ func show_message(text: String, secs: float = 3.0) -> void:
 func show_tutorial(text: String, secs: float = 6.0) -> void:
 	tutorial.text = text
 	tut_bg.visible = true
+	tutorial.visible = true
 	tut_t = secs
 
 
@@ -181,8 +183,11 @@ func update_status(who: String, hp: int, max_hp: int, ammo_count: int, stamina: 
 	elif ratio <= 0.67:
 		cond = "CAUTION"
 		col = Color(0.95, 0.7, 0.15)
-	status.text = "%s   %s" % [who.to_upper(), cond]
-	status.add_theme_color_override("font_color", col)
+	var st := "%s   %s" % [who.to_upper(), cond]
+	if st != status.text:
+		# Theme overrides re-layout the label; only touch it when the condition changes.
+		status.text = st
+		status.add_theme_color_override("font_color", col)
 	ammo.text = ("HANDGUN %d" % ammo_count) if who == "dana" else ""
 	stamina_bar.size.x = 60.0 * stamina / 100.0
 	panic_bar.size.x = 60.0 * panic / 100.0

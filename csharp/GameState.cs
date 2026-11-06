@@ -29,6 +29,7 @@ public partial class GameState : Node
 		{ "shadows", true },     // flashlight shadows
 		{ "fps", false },        // FPS counter
 		{ "touch", true },       // on-screen controls (touchscreens only)
+		{ "doors", true },       // RE-style door scene between rooms (skippable)
 	};
 
 	public GDict state = new GDict();
@@ -62,16 +63,18 @@ public partial class GameState : Node
 			input_kind = "keyboard";
 	}
 
+	// Built once: glyph() runs every frame for the interaction prompt, so it must not allocate.
+	static readonly System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>> GLYPHS = new()
+	{
+		["keyboard"] = new() { ["interact"] = "[E]", ["run"] = "[Shift]", ["aim"] = "[K]", ["fire"] = "[J]", ["quick_turn"] = "[Q]", ["inventory"] = "[Tab]", ["cancel"] = "[Esc]", ["flashlight"] = "[F]", ["pause"] = "[Esc]", ["breath"] = "[Shift]" },
+		["gamepad"] = new() { ["interact"] = "(A)", ["run"] = "(B)", ["aim"] = "(RB)", ["fire"] = "(X)", ["quick_turn"] = "(Y)", ["inventory"] = "(Back)", ["cancel"] = "(Back)", ["flashlight"] = "(LB)", ["pause"] = "(Start)", ["breath"] = "(B)" },
+		["touch"] = new() { ["interact"] = "Tap A", ["run"] = "Hold RUN", ["aim"] = "Hold AIM", ["fire"] = "Tap FIRE", ["quick_turn"] = "Tap TURN", ["inventory"] = "Tap ITEMS", ["cancel"] = "Tap BACK", ["flashlight"] = "Tap LIGHT", ["pause"] = "Tap II", ["breath"] = "Hold RUN" },
+	};
+
 	/// Button name for prompts, matching the device the player is using right now.
 	public string glyph(string action)
 	{
-		var t = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>
-		{
-			["keyboard"] = new() { ["interact"] = "[E]", ["run"] = "[Shift]", ["aim"] = "[K]", ["fire"] = "[J]", ["quick_turn"] = "[Q]", ["inventory"] = "[Tab]", ["cancel"] = "[Esc]", ["flashlight"] = "[F]", ["pause"] = "[Esc]", ["breath"] = "[Shift]" },
-			["gamepad"] = new() { ["interact"] = "(A)", ["run"] = "(B)", ["aim"] = "(RB)", ["fire"] = "(X)", ["quick_turn"] = "(Y)", ["inventory"] = "(Back)", ["cancel"] = "(Back)", ["flashlight"] = "(LB)", ["pause"] = "(Start)", ["breath"] = "(B)" },
-			["touch"] = new() { ["interact"] = "Tap A", ["run"] = "Hold RUN", ["aim"] = "Hold AIM", ["fire"] = "Tap FIRE", ["quick_turn"] = "Tap TURN", ["inventory"] = "Tap ITEMS", ["cancel"] = "Tap BACK", ["flashlight"] = "Tap LIGHT", ["pause"] = "Tap II", ["breath"] = "Hold RUN" },
-		};
-		var table = t.ContainsKey(input_kind) ? t[input_kind] : t["keyboard"];
+		var table = GLYPHS.TryGetValue(input_kind, out var tb) ? tb : GLYPHS["keyboard"];
 		return table.TryGetValue(action, out var g) ? g : action;
 	}
 
@@ -199,6 +202,17 @@ public partial class GameState : Node
 		state = data.AsGodotDictionary();
 		if (!state.ContainsKey("files")) state["files"] = new GArray();
 		return true;
+	}
+
+	/// Back to the title screen with a fresh state. The level is built from Game.state,
+	/// so returning with the finished/dead run's flags would rebuild the world with the
+	/// fuse and key already taken and NEW GAME would softlock (fixed in build-9).
+	public void go_to_title()
+	{
+		new_game();
+		skip_title = false;
+		mode = "title";
+		GetTree().ReloadCurrentScene();
 	}
 
 	public void restart(bool from_save)

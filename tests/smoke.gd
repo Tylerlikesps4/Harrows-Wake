@@ -62,6 +62,7 @@ func _process(_d: float) -> void:
 			ok(Game.mode == "title", "Settings BACK returns to title")
 			Game.tank_controls = true
 		5:
+			Game.settings["doors"] = false   # teleports below would trigger door scenes
 			Game.mode = "play"
 			m.hud.hide_overlay()
 			Game.set_flag("intro_done")

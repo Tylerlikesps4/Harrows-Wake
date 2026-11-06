@@ -32,7 +32,7 @@ var MAPS := {
 			Vector2i(1, 0): {"name": "West Hall", "floor": "floor_tiles_06", "fcol": Color(0.75, 0.75, 0.7), "wall": "blue_plaster_weathered", "wcol": Color(0.55, 0.62, 0.55), "step": "concrete", "light": Color(0.8, 0.95, 0.75), "fog": Color(0.04, 0.07, 0.05), "cam": 0, "flicker": true},
 			Vector2i(2, 0): {"name": "Evidence Room", "floor": "concrete_floor_worn_001", "fcol": Color(0.7, 0.72, 0.75), "wall": "painted_metal_shutter", "wcol": Color(0.5, 0.55, 0.62), "step": "concrete", "light": Color(0.65, 0.78, 1.0), "fog": Color(0.03, 0.045, 0.07), "cam": 3, "needs_power": true},
 			Vector2i(1, 1): {"name": "Records Room", "floor": "old_wood_floor", "fcol": Color(0.8, 0.65, 0.5), "wall": "decrepit_wallpaper", "wcol": Color(0.75, 0.68, 0.55), "step": "wood", "light": Color(1.0, 0.85, 0.6), "fog": Color(0.07, 0.05, 0.03), "cam": 1, "safe": true},
-			Vector2i(1, -1): {"name": "Chief's Office", "floor": "dirty_carpet", "fcol": Color(0.85, 0.55, 0.42), "wall": "decrepit_wallpaper", "wcol": Color(0.6, 0.5, 0.42), "step": "carpet", "light": Color(1.0, 0.72, 0.45), "fog": Color(0.06, 0.04, 0.03), "cam": 2, "energy": 3.0},
+			Vector2i(1, -1): {"name": "Chief's Office", "floor": "dirty_carpet", "fcol": Color(0.85, 0.55, 0.42), "wall": "decrepit_wallpaper", "wcol": Color(0.6, 0.5, 0.42), "step": "carpet", "light": Color(1.0, 0.72, 0.45), "fog": Color(0.12, 0.08, 0.055), "cam": 2, "energy": 3.6, "fog_d": 0.05, "ambient": 1.5},
 		},
 		"links": [[Vector2i(0, 0), Vector2i(1, 0), ""], [Vector2i(1, 0), Vector2i(2, 0), "evidence"], [Vector2i(1, 0), Vector2i(1, 1), ""], [Vector2i(1, 0), Vector2i(1, -1), ""]],
 	},
@@ -44,7 +44,7 @@ var MAPS := {
 			Vector2i(1, 0): {"name": "Corridor", "floor": "dark_wooden_planks", "fcol": Color(0.75, 0.6, 0.5), "wall": "damaged_plaster", "wcol": Color(0.6, 0.6, 0.55), "step": "wood", "light": Color(0.75, 0.82, 0.65), "fog": Color(0.04, 0.05, 0.04), "cam": 3, "flicker": true},
 			Vector2i(2, 0): {"name": "Chapel", "floor": "floor_tiles_06", "fcol": Color(0.65, 0.55, 0.52), "wall": "damaged_plaster", "wcol": Color(0.55, 0.42, 0.42), "step": "concrete", "light": Color(1.0, 0.45, 0.3), "fog": Color(0.08, 0.025, 0.02), "cam": 0, "amb": "amb_chapel"},
 			Vector2i(1, 1): {"name": "Mail Room", "floor": "old_wood_floor", "fcol": Color(0.8, 0.65, 0.5), "wall": "plastered_wall_02", "wcol": Color(0.7, 0.65, 0.52), "step": "wood", "light": Color(1.0, 0.86, 0.6), "fog": Color(0.07, 0.05, 0.03), "cam": 2, "safe": true},
-			Vector2i(1, -1): {"name": "Playroom", "floor": "dirty_carpet", "fcol": Color(0.85, 0.62, 0.78), "wall": "decrepit_wallpaper", "wcol": Color(0.65, 0.5, 0.6), "step": "carpet", "light": Color(0.8, 0.65, 0.95), "fog": Color(0.05, 0.03, 0.07), "cam": 1, "energy": 2.8},
+			Vector2i(1, -1): {"name": "Playroom", "floor": "dirty_carpet", "fcol": Color(0.85, 0.62, 0.78), "wall": "decrepit_wallpaper", "wcol": Color(0.65, 0.5, 0.6), "step": "carpet", "light": Color(0.85, 0.68, 0.95), "fog": Color(0.1, 0.065, 0.12), "cam": 1, "energy": 3.4, "fog_d": 0.05, "ambient": 1.7},
 		},
 		"links": [[Vector2i(0, 0), Vector2i(1, 0), ""], [Vector2i(1, 0), Vector2i(2, 0), ""], [Vector2i(1, 0), Vector2i(1, 1), ""], [Vector2i(1, 0), Vector2i(1, -1), ""]],
 	},
@@ -146,6 +146,7 @@ func _ready() -> void:
 	_build_enemies()
 	_build_scares()
 	_build_ui()
+	_build_door_stage()
 	_apply_state()
 	Game.settings_changed.connect(_apply_settings)
 	_apply_settings()
@@ -155,6 +156,10 @@ func _ready() -> void:
 		add_child(load("res://tests/flow.gd").new())
 	if "--shots" in OS.get_cmdline_user_args():
 		add_child(load("res://tests/shots.gd").new())
+	if "--regress" in OS.get_cmdline_user_args():
+		add_child(load("res://tests/regress.gd").new())
+	if "--perf" in OS.get_cmdline_user_args():
+		add_child(load("res://tests/perf.gd").new())
 	if Game.skip_title:
 		Game.skip_title = false
 		Game.mode = "play"
@@ -163,6 +168,19 @@ func _ready() -> void:
 	else:
 		Game.mode = "title"
 		_show_title()
+
+
+## Phones: leaving the app (home button, a call, the notification shade) pauses
+## the game and lets go of the touch stick, so nobody walks into the Bellman
+## while the app is in the background.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
+		if touch != null:
+			touch.release_all()
+		if is_node_ready() and Game.mode == "door":
+			_door_finish()
+		if is_node_ready() and Game.mode == "play" and intro_t < 0.0:
+			_open_pause()
 
 
 # ---------------------------------------------------------------- building
@@ -278,6 +296,26 @@ func _link_between(map: String, a: Vector2i, b: Vector2i) -> Array:
 	return []
 
 
+## Mobile cost: the GL Compatibility renderer draws every object once more for
+## each light touching it. Lights are culled per room: a room's own lights, plus
+## the ceiling bulbs of the rooms its doorways open onto (see _update_lights).
+var light_cell: Dictionary = {}   # light -> [map, cell, is_ceiling]
+
+
+func _register_light(lt: Light3D, map: String, ceiling: bool) -> void:
+	light_cell[lt] = [map, cell_of(map, lt.global_position), ceiling]
+
+
+func _update_lights(who: String, c: Vector2i) -> void:
+	for lt in light_cell.keys():
+		if not is_instance_valid(lt):
+			continue
+		var info: Array = light_cell[lt]
+		if info[0] != who:
+			continue
+		lt.visible = info[1] == c or (info[2] and not _link_between(who, info[1], c).is_empty())
+
+
 func _add_light(root: Node3D, key: String, pos: Vector3, col: Color, energy: float, rng: float, flicker: bool = false) -> OmniLight3D:
 	var lt := OmniLight3D.new()
 	lt.light_color = col
@@ -286,6 +324,8 @@ func _add_light(root: Node3D, key: String, pos: Vector3, col: Color, energy: flo
 	lt.omni_attenuation = 1.4
 	lt.position = pos
 	root.add_child(lt)
+	if MAPS.has(str(root.name)):
+		_register_light(lt, str(root.name), key != "")
 	light_base[lt] = energy
 	if flicker:
 		flicker_lights.append(lt)
@@ -352,6 +392,7 @@ func _moon_window(root: Node3D, map: String, c: Vector2i, o: Vector3, rot_y: flo
 	var inward := (cell_center(map, c) - pos)
 	inward.y = 0.0
 	moon.look_at_from_position(pos + Vector3(0, 0.8, 0) + inward.normalized() * 0.25, _off(map, c, target), Vector3.UP)
+	_register_light(moon, map, false)
 
 
 func _wall_segment(root: Node3D, size: Vector3, center: Vector3, r: Dictionary, along_x: bool) -> void:
@@ -495,6 +536,7 @@ func _build_props(map: String, root: Node3D) -> void:
 		moon.spot_angle = 30.0
 		root.add_child(moon)
 		moon.look_at_from_position(_off(map, D, Vector3(-3.7, 2.6, 0.4)), _off(map, D, Vector3(-0.8, 0, 0.6)), Vector3.UP)
+		_register_light(moon, map, false)
 		# Corridor: wall sconces, debris, a toppled bench.
 		var Co := Vector2i(1, 0)
 		box(root, Vector3(1.4, 0.02, 0.7), _off(map, Co, Vector3(-1.5, 0.01, 0.8)), "dirty_carpet", blood, 1, false)
@@ -776,11 +818,13 @@ func _build_sfx() -> void:
 	amb_player = _loop_player("amb_orphanage", -80.0)
 	amb2_player = _loop_player("amb_station", -80.0)
 	title_music = _loop_player("title_music", -80.0)
+	title_music.bus = &"Music"
 	# End credits: the sung version of the main theme, played once.
 	credits_music = AudioStreamPlayer.new()
 	credits_music.name = "credits_music"
 	credits_music.stream = _load_sfx("credits_song")
 	credits_music.volume_db = -4.0
+	credits_music.bus = &"Music"
 	add_child(credits_music)
 	var rain := _loop_player("amb_rain", -80.0)
 	rain.name = "rain"
@@ -795,6 +839,7 @@ func _loop_player(n: String, vol: float) -> AudioStreamPlayer:
 	a.stream = st
 	a.volume_db = vol
 	a.name = n
+	a.bus = &"SFX"   # ambience follows the SFX volume; title_music is moved to Music
 	add_child(a)
 	a.play()
 	return a
@@ -819,17 +864,25 @@ func _apply_state() -> void:
 
 # ---------------------------------------------------------------- helpers
 
+const MAX_VOICES := 4   # copies of one sound playing at once (the self-typing typewriter used to stack dozens)
+var voices: Dictionary = {}
+
+
 func play_sfx(sname: String, pos = null, vol: float = 0.0, pitch: float = 1.0, max_dist: float = 35.0) -> void:
 	if not sfx.has(sname) or sfx[sname] == null:
 		return
+	if int(voices.get(sname, 0)) >= MAX_VOICES:
+		return
+	voices[sname] = int(voices.get(sname, 0)) + 1
+	var a: Node = null
 	if pos == null:
-		var a := AudioStreamPlayer.new()
-		a.stream = sfx[sname]
-		a.volume_db = vol
-		a.pitch_scale = pitch
-		add_child(a)
-		a.finished.connect(a.queue_free)
-		a.play()
+		var a2 := AudioStreamPlayer.new()
+		a2.stream = sfx[sname]
+		a2.volume_db = vol
+		a2.pitch_scale = pitch
+		a2.bus = &"SFX"
+		a = a2
+		add_child(a2)
 	else:
 		var a3 := AudioStreamPlayer3D.new()
 		a3.stream = sfx[sname]
@@ -837,10 +890,17 @@ func play_sfx(sname: String, pos = null, vol: float = 0.0, pitch: float = 1.0, m
 		a3.pitch_scale = pitch
 		a3.unit_size = 4.0
 		a3.max_distance = max_dist
+		a3.bus = &"SFX"
+		a = a3
 		add_child(a3)
 		a3.global_position = pos
-		a3.finished.connect(a3.queue_free)
-		a3.play()
+	a.finished.connect(_voice_done.bind(sname, a))
+	a.play()
+
+
+func _voice_done(sname: String, a: Node) -> void:
+	voices[sname] = maxi(0, int(voices.get(sname, 1)) - 1)
+	a.queue_free()
 
 
 func play_step(pos: Vector3, surface: String, vol: float = 0.0, pitch: float = 1.0, max_dist: float = 25.0) -> void:
@@ -908,7 +968,7 @@ func fire(p, target) -> void:
 	fl.omni_range = 7.0
 	add_child(fl)
 	fl.global_position = muzzle
-	get_tree().create_timer(0.06).timeout.connect(fl.queue_free)
+	create_tween().tween_callback(fl.queue_free).set_delay(0.06)
 	# Muzzle flash: a star-shaped billboard for two frames.
 	var mf := MeshInstance3D.new()
 	var q := QuadMesh.new()
@@ -927,7 +987,7 @@ func fire(p, target) -> void:
 	add_child(mf)
 	mf.global_position = muzzle
 	mf.rotation.z = randf() * TAU
-	get_tree().create_timer(0.07).timeout.connect(mf.queue_free)
+	create_tween().tween_callback(mf.queue_free).set_delay(0.07)
 	p.recoil()
 	if target != null:
 		target.hit(1)
@@ -987,7 +1047,8 @@ func bellman_grab(difficulty: float) -> void:
 	if p.hidden_in != "":
 		_unhide(p)
 	Game.mode = "struggle"
-	struggle_need = int(7.0 + panic / 10.0 * difficulty)
+	# Capped: 23 presses in 3.2 s was unwinnable on a touchscreen.
+	struggle_need = mini(int(7.0 + panic / 10.0 * difficulty), 15)
 	struggle_count = 0
 	struggle_t = 3.2
 	play_sfx("sting")
@@ -1037,9 +1098,11 @@ func die(reason: String) -> void:
 	set_meta("death_reason", reason)
 	var tw := create_tween()
 	tw.tween_method(func(v: float) -> void: post_mat.set_shader_parameter("fade", v), 0.0, 0.6, 1.5)
-	get_tree().create_timer(1.2).timeout.connect(func() -> void:
+	# Node-bound tween instead of a SceneTreeTimer: a tree timer outlives a scene
+	# reload and would call into the freed level.
+	create_tween().tween_callback(func() -> void:
 		if Game.mode == "dead":
-			_render_death())
+			_render_death()).set_delay(1.2)
 
 
 func death_options() -> Array:
@@ -1059,9 +1122,7 @@ func death_choose(i: int) -> void:
 	if i == 0:
 		Game.restart(Game.has_save())
 	else:
-		Game.mode = "title"
-		Game.skip_title = false
-		get_tree().reload_current_scene()
+		Game.go_to_title()
 
 
 func _win() -> void:
@@ -1154,9 +1215,7 @@ func _end_card_process(delta: float) -> void:
 		hud.ov_title.modulate.a = 1.0 - fadeout
 	var finished := credits_lbl != null and credits_lbl.position.y < -credits_lbl.get_minimum_size().y
 	if (Input.is_action_just_pressed("interact") and end_t > 1.0) or finished:
-		Game.mode = "title"
-		Game.skip_title = false
-		get_tree().reload_current_scene()
+		Game.go_to_title()
 
 
 # ---------------------------------------------------------------- title
@@ -1322,9 +1381,7 @@ func _open_pause() -> void:
 			2:
 				_open_settings(false)
 			3:
-				Game.mode = "title"
-				Game.skip_title = false
-				get_tree().reload_current_scene()
+				Game.go_to_title()
 			_:
 				_close_menu()
 	)
@@ -1346,6 +1403,7 @@ const SETTING_ROWS := [
 	["stick_sens", "Touch stick sensitivity", "float", 0.5, 2.0, 0.1],
 	["btn_size", "Touch button size", "float", 0.7, 1.5, 0.1],
 	["btn_opacity", "Touch button opacity", "float", 0.2, 1.0, 0.1],
+	["doors", "Door animations", "bool"],
 ]
 
 
@@ -1414,6 +1472,8 @@ func _open_settings(from_title: bool) -> void:
 				return "Off is faster on phones (60 fps)."
 			"invert_y":
 				return "Swaps the stick's up and down for movement."
+			"doors":
+				return "The classic door-opening scene between rooms. %s skips it." % Game.glyph("interact")
 		return ""
 	_render_menu()
 
@@ -1654,6 +1714,9 @@ func _interact(it: Dictionary) -> void:
 					doors.erase("evidence")
 				var lt: OmniLight3D = room_lights["dana_%s" % [Vector2i(2, 0)]]
 				lt.light_energy = light_base[lt]
+				var lamp: MeshInstance3D = get_node_or_null("dana/fuse_lamp")
+				if lamp != null:
+					lamp.material_override = Lib.mat("plastered_wall_02", Color(0.2, 1.0, 0.3), false, 1.0, 2.0, 0.6)
 				play_sfx("unlock")
 				play_sfx("door", _off("dana", Vector2i(1, 0), Vector3(4, 1, 0)), 0.0)
 				p.act("Interact", 0.8)
@@ -1714,12 +1777,14 @@ func _build_scares() -> void:
 	phone_player.stream = sfx["phone"]
 	phone_player.unit_size = 5.0
 	phone_player.max_distance = 30.0
+	phone_player.bus = &"SFX"
 	add_child(phone_player)
 	phone_player.global_position = _off("dana", Vector2i(1, -1), Vector3(-0.5, 1.0, -2.4))
 	musicbox_player = AudioStreamPlayer3D.new()
 	musicbox_player.stream = sfx["musicbox"]
 	musicbox_player.unit_size = 3.0
 	musicbox_player.max_distance = 25.0
+	musicbox_player.bus = &"SFX"
 	add_child(musicbox_player)
 	musicbox_player.global_position = _off("jenny", Vector2i(1, -1), Vector3(0.5, 0.9, -0.6))
 	var mb := part(get_node("jenny"), bmesh(Vector3(0.22, 0.14, 0.16)), musicbox_player.global_position - Vector3(0, 0.05, 0), "dark_wooden_planks", Color(0.7, 0.35, 0.3), 0.1)
@@ -1732,7 +1797,7 @@ func _scare_room_enter(who: String, room: String) -> void:
 		musicbox_player.play()
 		var lt: OmniLight3D = room_lights.get("jenny_%s" % [Vector2i(1, -1)])
 		if lt:
-			lt.light_energy = light_base.get(lt, 2.0) * 0.55
+			lt.light_energy = light_base.get(lt, 2.0) * 0.8
 		var bear: Node3D = props.get("bear")
 		if bear:
 			var to: Vector3 = players["jenny"].global_position - bear.global_position
@@ -1744,10 +1809,10 @@ func _scare_room_enter(who: String, room: String) -> void:
 		phone_player.play()
 		var pit := {"map": "dana", "kind": "phone", "id": "phone", "pos": phone_player.global_position, "point": _off("dana", Vector2i(1, -1), Vector3(-0.5, 0, -1.6)), "label": "Answer the phone"}
 		interactables.append(pit)
-		get_tree().create_timer(30.0).timeout.connect(func() -> void:
+		create_tween().tween_callback(func() -> void:
 			if phone_player.playing:
 				phone_player.stop()
-				interactables.erase(pit))
+				interactables.erase(pit)).set_delay(30.0)
 	elif who == "jenny" and room == "Corridor":
 		tutorial("flashlight", "It's dark. %s toggles the flashlight." % Game.glyph("flashlight"))
 	elif who == "dana" and room == "Records Room":
@@ -1761,7 +1826,7 @@ func _answer_phone(it: Dictionary) -> void:
 	static_player.volume_db = -14.0
 	Game.mode = "note"
 	hud.show_overlay("The Phone", "Static. Then a child, very close to the receiver:\n\n\"Officer? He rings when he's hungry. When the bell stops, that's when he's near.\"\n\nBreathing. Then, faint and far away on the line - a hand bell.\n\n%s Hang up" % Game.glyph("interact"))
-	get_tree().create_timer(2.0).timeout.connect(func() -> void: play_sfx("bell", null, -16.0, 0.9))
+	create_tween().tween_callback(play_sfx.bind("bell", null, -16.0, 0.9)).set_delay(2.0)
 
 
 func _on_fuse_taken() -> void:
@@ -1878,6 +1943,7 @@ func _process(delta: float) -> void:
 	for lt in candle_lights:
 		lt.light_energy = lerpf(lt.light_energy, light_base[lt] * randf_range(0.7, 1.15), 0.3)
 	fire_cd = maxf(0.0, fire_cd - delta)
+	door_cool = maxf(0.0, door_cool - delta)
 
 	match Game.mode:
 		"title":
@@ -1935,6 +2001,9 @@ func _process(delta: float) -> void:
 				_show_end_card()
 		"endcard":
 			_end_card_process(delta)
+		"door":
+			if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("cancel"):
+				_door_finish()
 		"play":
 			_play_process(delta)
 	_intro_process(delta)
@@ -1943,8 +2012,8 @@ func _process(delta: float) -> void:
 		_update_camera()
 	_update_audio_and_fx(delta)
 	var who: String = Game.state["active"]
-	hud.set_hud_visible(not in_title and Game.mode != "endcard")
-	hud.update_status(who, int(Game.state["hp"][who]), MAX_HP[who], int(Game.state["ammo"]), players[who].stamina, panic, who == "jenny" and not in_title and Game.mode != "endcard")
+	hud.set_hud_visible(not in_title and Game.mode != "endcard" and Game.mode != "door")
+	hud.update_status(who, int(Game.state["hp"][who]), MAX_HP[who], int(Game.state["ammo"]), players[who].stamina, panic, who == "jenny" and not in_title and Game.mode != "endcard" and Game.mode != "door")
 
 
 func _play_process(delta: float) -> void:
@@ -2000,10 +2069,11 @@ func _hidden_process(p, delta: float) -> void:
 		_unhide(p)
 
 
-func _set_fog(col: Color, density: float) -> void:
+func _set_fog(col: Color, density: float, ambient: float = 0.95) -> void:
 	var tw := create_tween()
 	tw.tween_property(env, "fog_light_color", col, 0.6)
 	tw.parallel().tween_property(env, "fog_density", density, 0.6)
+	tw.parallel().tween_property(env, "ambient_light_energy", ambient, 0.6)
 
 
 func _update_camera() -> void:
@@ -2016,7 +2086,8 @@ func _update_camera() -> void:
 		cameras[who][c].make_current()
 		var r: Dictionary = MAPS[who]["rooms"][c]
 		cur_room_name = r["name"]
-		_set_fog(r["fog"], 0.09 if not r.get("safe", false) else 0.06)
+		_set_fog(r["fog"], r.get("fog_d", 0.09 if not r.get("safe", false) else 0.06), r.get("ambient", 0.95))
+		_update_lights(who, c)
 		var amb: String = r.get("amb", MAPS[who]["amb"])
 		if amb != cur_amb:
 			cur_amb = amb
@@ -2024,8 +2095,11 @@ func _update_camera() -> void:
 			amb_player.play()
 		for mk in map_roots.keys():
 			map_roots[mk].visible = mk == who   # draw only the active survivor's building
-		if not first:
-			# Door transition: a short fade through black with a creak.
+		if not first and _doors_on() and Game.mode == "play" and door_cool <= 0.0 and players[who].hidden_in == "":
+			_door_sequence(r)
+		elif not first:
+			# Quick transition (door animations off, or just walked back through):
+			# a short fade through black with a creak.
 			door_t = 0.45
 			post_mat.set_shader_parameter("fade", 1.0)
 			var tw := create_tween()
@@ -2042,6 +2116,114 @@ func _update_camera() -> void:
 			cam.transform = b.translated_local(Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * shake * 0.08)
 		else:
 			cam.transform = b
+
+
+# ---------------------------------------------------------------- door scene
+## Resident Evil-style room change: black, a door creaks open in front of the
+## camera as it pushes through, black again, new room. ~1.5 s, skippable with
+## interact/cancel, off in Settings. A 2 s cooldown stops it replaying if you
+## step straight back through the same doorway.
+
+const DOOR_STAGE := Vector3(0, -200, 0)
+const DOOR_SECS := 1.5
+var door_stage: Node3D = null
+var door_cam: Camera3D = null
+var door_hinge: Node3D = null
+var door_far: OmniLight3D = null
+var door_tweens: Array = []
+var door_cool: float = 0.0
+
+
+func _doors_on() -> bool:
+	return bool(Game.settings.get("doors", true))
+
+
+func _build_door_stage() -> void:
+	door_stage = Node3D.new()
+	door_stage.name = "door_stage"
+	add_child(door_stage)
+	door_stage.position = DOOR_STAGE
+	var wcol := Color(0.5, 0.45, 0.4)
+	var frame_col := Color(0.38, 0.28, 0.22)
+	box(door_stage, Vector3(8.0, 0.1, 8.0), Vector3(0, -0.05, 0), "old_wood_floor", Color(0.7, 0.6, 0.5), 1, false, 0.0, 0.45)
+	box(door_stage, Vector3(3.0, 2.2, 0.25), Vector3(-2.05, 2.1, 0), "decrepit_wallpaper", wcol, 1, false)
+	box(door_stage, Vector3(3.0, 2.2, 0.25), Vector3(2.05, 2.1, 0), "decrepit_wallpaper", wcol, 1, false)
+	box(door_stage, Vector3(1.2, 1.0, 0.25), Vector3(0, 2.7, 0), "decrepit_wallpaper", wcol, 1, false)
+	box(door_stage, Vector3(3.0, 1.0, 0.27), Vector3(-2.05, 0.5, 0), "dark_wooden_planks", Color(0.55, 0.42, 0.34), 1, false, 0.0, 0.6)
+	box(door_stage, Vector3(3.0, 1.0, 0.27), Vector3(2.05, 0.5, 0), "dark_wooden_planks", Color(0.55, 0.42, 0.34), 1, false, 0.0, 0.6)
+	for x in [-0.6, 0.6]:
+		box(door_stage, Vector3(0.12, 2.25, 0.34), Vector3(x, 1.12, 0), "dark_wooden_planks", frame_col, 1, false)
+	box(door_stage, Vector3(1.32, 0.12, 0.34), Vector3(0, 2.26, 0), "dark_wooden_planks", frame_col, 1, false)
+	door_hinge = Node3D.new()
+	door_stage.add_child(door_hinge)
+	door_hinge.position = Vector3(-0.54, 0, 0)
+	var panel := part(door_hinge, bmesh(Vector3(1.08, 2.18, 0.07)), Vector3(0.54, 1.09, 0), "dark_wooden_planks", Color(0.55, 0.4, 0.3))
+	for y in [0.55, 1.6]:
+		part(panel, bmesh(Vector3(0.8, 0.6, 0.02)), Vector3(0, y - 1.09, 0.045), "dark_wooden_planks", Color(0.42, 0.3, 0.22))
+	var knob := part(panel, cyl(0.035, 0.035, 0.1, 6), Vector3(0.4, -0.1, 0.07), "rusty_metal_02", Color(0.85, 0.7, 0.4), 0.3)
+	knob.rotation.x = PI / 2.0
+	var near_lt := OmniLight3D.new()
+	near_lt.light_color = Color(1.0, 0.85, 0.6)
+	near_lt.light_energy = 1.6
+	near_lt.omni_range = 5.0
+	door_stage.add_child(near_lt)
+	near_lt.position = Vector3(0.6, 2.4, 1.7)
+	door_far = OmniLight3D.new()
+	door_far.light_energy = 2.2
+	door_far.omni_range = 5.0
+	door_stage.add_child(door_far)
+	door_far.position = Vector3(0.3, 1.8, -2.4)
+	door_cam = Camera3D.new()
+	door_cam.fov = 55.0
+	door_cam.far = 20.0
+	door_stage.add_child(door_cam)
+	door_stage.visible = false
+
+
+func _door_sequence(to_room: Dictionary) -> void:
+	Game.mode = "door"
+	door_stage.visible = true
+	door_hinge.rotation.y = 0.0
+	door_far.light_color = to_room.get("light", Color(1, 0.9, 0.7))
+	door_cam.look_at_from_position(DOOR_STAGE + Vector3(0.1, 1.55, 3.3), DOOR_STAGE + Vector3(0, 1.2, 0), Vector3.UP)
+	door_cam.make_current()
+	post_mat.set_shader_parameter("fade", 1.0)
+	play_sfx("door", null, -8.0, randf_range(0.9, 1.05))
+	var t1 := create_tween()
+	t1.tween_interval(0.3)
+	t1.tween_callback(play_sfx.bind("creak", null, -4.0, randf_range(0.8, 0.95)))
+	t1.tween_property(door_hinge, "rotation:y", 1.85, 0.85).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var t2 := create_tween()
+	t2.tween_property(door_cam, "position:z", 0.9, DOOR_SECS).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	var t3 := create_tween()
+	t3.tween_method(_set_fade, 1.0, 0.0, 0.2)
+	t3.tween_interval(DOOR_SECS - 0.45)
+	t3.tween_method(_set_fade, 0.0, 1.0, 0.25)
+	t3.tween_callback(_door_finish)
+	door_tweens = [t1, t2, t3]
+
+
+func _set_fade(v: float) -> void:
+	post_mat.set_shader_parameter("fade", v)
+
+
+func _door_finish() -> void:
+	for tw in door_tweens:
+		if tw != null and tw.is_valid():
+			tw.kill()
+	door_tweens = []
+	if door_stage == null or not door_stage.visible:
+		return
+	door_stage.visible = false
+	door_cool = 2.0
+	if Game.mode == "door":
+		Game.mode = "play"
+	var who: String = Game.state["active"]
+	var c := cell_of(who, players[who].global_position)
+	if cameras[who].has(c):
+		cameras[who][c].make_current()
+	var tw := create_tween()
+	tw.tween_method(_set_fade, 1.0, 0.0, 0.25)
 
 
 var _stream_cache: Dictionary = {}
@@ -2069,8 +2251,9 @@ func _update_audio_and_fx(delta: float) -> void:
 	if Game.mode != "endcard":
 		title_music.volume_db = lerpf(title_music.volume_db, -10.0 if is_title else -80.0, minf(1.0, delta * 1.5))
 	var rain: AudioStreamPlayer = get_node("rain")
-	rain.volume_db = lerpf(rain.volume_db, -14.0 if is_title else -32.0, minf(1.0, delta * 1.5))
-	amb_player.volume_db = lerpf(amb_player.volume_db, -80.0 if is_title else -12.0, minf(1.0, delta * 1.0))
+	var credits: bool = Game.mode == "endcard"   # the sung theme plays alone over the credits
+	rain.volume_db = lerpf(rain.volume_db, -14.0 if is_title else (-30.0 if credits else -32.0), minf(1.0, delta * 1.5))
+	amb_player.volume_db = lerpf(amb_player.volume_db, -80.0 if (is_title or credits) else -12.0, minf(1.0, delta * 1.0))
 	amb2_player.volume_db = -80.0
 	# Radio static near monsters (Dana's police radio).
 	var target_db: float = -80.0 if Game.mode != "note" else static_player.volume_db
@@ -2082,6 +2265,9 @@ func _update_audio_and_fx(delta: float) -> void:
 			if d < 13.0:
 				target_db = maxf(target_db, lerpf(-34.0, -9.0, 1.0 - d / 13.0))
 	static_player.volume_db = lerpf(static_player.volume_db, target_db, minf(1.0, delta * 6.0))
+	# Silent loops still cost a Vorbis decoder each; pause them while inaudible (phones).
+	for ap in [title_music, static_player, amb_player, amb2_player, rain]:
+		ap.stream_paused = ap.volume_db <= -79.0
 
 	# Panic (Jenny).
 	if who == "jenny" and Game.mode == "play":

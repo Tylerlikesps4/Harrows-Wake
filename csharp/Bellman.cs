@@ -5,19 +5,15 @@ using GDict = Godot.Collections.Dictionary;
 namespace HarrowsWake;
 
 /// <summary>
-/// The Bellman: unkillable stalker. Sees (cone, longer when your flashlight is on),
-/// hears, telegraphs before a chase, searches, notices if you hid in front of him,
-/// can be stunned. Ported from bellman.gd. Talks to the GDScript side (main.gd, the
-/// actor model, the player) through Call/Get; members are snake_case so main.gd and
-/// the tests use him exactly as before (bellman.state == bellman.S.CHASE, bellman.stun(4.5)).
+/// The Bellman: unkillable stalker. Sees, hears, telegraphs, searches, can be stunned.
+/// snake_case members so GDScript and the tests use him directly (bellman.S.CHASE, bellman.stun(4.5)).
 /// </summary>
 [GlobalClass]
 public partial class Bellman : CharacterBody3D
 {
 	public const int DORMANT = 0, PATROL = 1, INVESTIGATE = 2, CHASE = 3, SEARCH = 4, FOUND = 5, STUNNED = 6, LEAVE = 7, NOTICE = 8;
 
-	/// Enum mirror for GDScript: bellman.S.CHASE etc. Built once (main.gd reads it
-	/// every frame inside the light loop, so it must not allocate a new dictionary).
+	/// Enum mirror for GDScript (bellman.S.CHASE). Built once, main.gd reads it every frame.
 	GDict _s = null;
 	public GDict S => _s ??= new GDict
 	{
@@ -45,12 +41,12 @@ public partial class Bellman : CharacterBody3D
 	public float notice_t = 0f;
 	public float grab_cd = 0f;
 	public float grabbing_t = 0f;
-	// Stuck watchdog: a target he can't reach (locked door, a prop in the way, a cell
-	// he won't enter) used to freeze him in place forever, bell ringing.
+	// stuck watchdog: an unreachable target (locked door, prop, a cell he won't
+	// enter) would otherwise freeze him in place with the bell ringing
 	public float stuck_t = 0f;
 	public int stuck_n = 0;
 	Vector3 _stuck_pos = Vector3.Zero;
-	// Waypoint cache: the room-graph search runs a few times a second, not every tick.
+	// waypoint cache: graph search runs a few times a second, not every tick
 	Vector3 _wp = Vector3.Zero;
 	Vector3 _wp_for = new Vector3(1e6f, 0, 0);
 	float _wp_t = 0f;
@@ -116,7 +112,7 @@ public partial class Bellman : CharacterBody3D
 				break;
 			case NOTICE:
 			{
-				// Readable telegraph: he stops, turns to you, the bell shrieks - then comes.
+				// telegraph: he stops, turns to you, the bell shrieks, then he comes
 				notice_t -= delta;
 				var to = p.GlobalPosition - GlobalPosition;
 				var r = Rotation;
@@ -149,8 +145,8 @@ public partial class Bellman : CharacterBody3D
 			case FOUND:
 				spd = 2.6f;
 				target = p.GlobalPosition;
-				// He knows where you are - but not forever. If you got away (out of sight,
-				// not hiding, or into the Mail Room he won't enter) he gives up and searches.
+				// he knows where you are, but not forever: if you got away (out of sight,
+				// not hiding, or in the Mail Room) he gives up and searches
 				if (sees || p.Get("hidden_in").AsString() != "") lost_t = 0f; else lost_t += delta;
 				if (lost_t > 4f || blocked.Contains((Vector2I)main.Call("cell_of", map, p.GlobalPosition)))
 				{
@@ -223,7 +219,7 @@ public partial class Bellman : CharacterBody3D
 			main.Call("play_sfx", "bell", GlobalPosition + new Vector3(0, 1.8f, 0), 0.0);
 		}
 
-		// Heavy, unhurried footsteps - audible through walls before he's in view.
+		// keep the footsteps audible through walls before he's in view
 		float hs = new Vector2(Velocity.X, Velocity.Z).Length();
 		if (hs > 0.2f)
 		{

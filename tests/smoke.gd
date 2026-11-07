@@ -20,8 +20,8 @@ func tp(who: String, it: Dictionary) -> void:
 
 func _ready() -> void:
 	m = get_parent()
-	# Headless runs uncapped; cap the frame rate so the frame-numbered steps
-	# below cover real time (fixes the old "Jenny moves" flake).
+	# headless runs uncapped; cap fps so the frame-numbered steps below
+	# match real time
 	Engine.max_fps = 60
 	Game.tank_controls = true
 	if Game.smoke_phase == 2:

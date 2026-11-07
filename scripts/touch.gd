@@ -1,9 +1,7 @@
 extends CanvasLayer
-## On-screen touch controls for phones/tablets.
-## Left half: a floating analog stick (appears wherever your thumb lands).
-## Right side: thumb-sized buttons. Every control presses an existing input
-## action, so game code is unchanged. Shown automatically on touchscreens;
-## F3 toggles it on desktop for testing.
+## On-screen touch controls. Left half: floating stick wherever your thumb
+## lands. Right side: big buttons. Each control just presses an existing input
+## action, so game code doesn't care. Auto on touchscreens, F3 toggles on desktop.
 
 const STICK_R := 30.0   # canvas pixels (canvas is 240 px tall)
 const DEAD := 0.18
@@ -105,8 +103,8 @@ func _layout() -> void:
 		hud.layout_overlay()
 
 
-## Canvas rects of the lower-screen controls shown while playing (stick ring
-## and thumb buttons); the HUD keeps its messages and item banner clear of them.
+## Canvas rects of the in-play controls (stick ring + buttons), so the HUD
+## can keep messages and the item banner clear of them.
 func play_rects() -> Array:
 	var out: Array = []
 	var sr := STICK_R + 2.0
@@ -163,8 +161,7 @@ func _process(_d: float) -> void:
 	buttons["flashlight"].visible = playing
 	buttons["quick_turn"].visible = playing
 	buttons["run"].visible = playing
-	# The floating stick only shows its resting ring in play; on documents and
-	# menus it stays out of the way of the text until a thumb lands.
+	# resting ring only shows in play; on docs/menus it hides until a thumb lands
 	var show_stick: bool = playing or joy_index >= 0
 	base.visible = show_stick
 	knob.visible = show_stick
@@ -176,9 +173,8 @@ func _input(event: InputEvent) -> void:
 		visible = not visible
 		return
 	if not visible:
-		# "Touch controls OFF" is for a Bluetooth pad. Touching the screen brings them
-		# back, so a phone player who turned them off can still reach the menus
-		# (before build-9 that was a softlock with no way back to Settings).
+		# touch OFF is meant for a Bluetooth pad. Touching the screen brings them back
+		# so phone players can still get to Settings.
 		if touch_capable and event is InputEventScreenTouch and event.pressed:
 			visible = true
 			_layout()

@@ -30,9 +30,8 @@ var acting_t: float = 0.0
 var laser: MeshInstance3D = null
 var laser_dot: MeshInstance3D = null
 var turning_in_place: bool = false
-# Ground speed (m/s) of each animation at scale 1, measured from the foot bones
-# (tools/measure.gd). Playback speed = actual speed / (native * model scale),
-# so feet stay planted instead of sliding.
+# ground speed (m/s) of each anim at scale 1, measured from the foot bones
+# (tools/measure.gd). Playback scales to match so feet don't slide.
 const NATIVE_SPEED := {"Walk": 1.0, "Jog_Fwd": 2.5, "Sprint": 3.3}
 
 
@@ -194,8 +193,8 @@ func _physics_process(delta: float) -> void:
 				_quick_turn()
 		else:
 			var cam: Camera3D = get_viewport().get_camera_3d()
-			# Keep using the old camera's frame while the stick is held through a
-			# camera cut, so "up" doesn't suddenly mean a different direction.
+			# keep the old camera's frame while the stick is held through a cut,
+			# otherwise "up" suddenly points somewhere else
 			if iv.length() < 0.15 or move_basis_cam == null or not is_instance_valid(move_basis_cam):
 				move_basis_cam = cam
 			var bc: Camera3D = move_basis_cam if move_basis_cam != null else cam
@@ -209,9 +208,8 @@ func _physics_process(delta: float) -> void:
 				var dir: Vector3 = (r * iv.x + f * (-iv.y)).normalized()
 				running = want_run and not exhausted
 				spd = run_speed if running else walk_speed
-				# Turn first, then go: big direction changes pivot on the spot
-				# (speed scales with how closely she faces the stick), so there's
-				# no moonwalking or skating sideways.
+				# turn first, then go: big direction changes pivot in place (speed scales
+				# with how much she faces the stick), so no moonwalking
 				var want_yaw := atan2(-dir.x, -dir.z)
 				var diff := absf(angle_difference(rotation.y, want_yaw))
 				var facing := clampf(cos(diff) * 1.25, 0.0, 1.0) if diff > 0.35 else 1.0
@@ -223,7 +221,7 @@ func _physics_process(delta: float) -> void:
 		if who == "jenny" and main != null:
 			target *= 1.0 - main.panic * 0.0025
 
-	# Smooth acceleration / deceleration.
+	# ease in/out
 	var accel := 9.0 if target.length() > hvel.length() else 12.0
 	hvel = hvel.lerp(target, minf(1.0, accel * delta))
 	if target == Vector3.ZERO and hvel.length() < 0.05:

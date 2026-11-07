@@ -5,10 +5,10 @@ using GDict = Godot.Collections.Dictionary;
 namespace HarrowsWake;
 
 /// <summary>
-/// Room-graph pathfinding shared by the Bellman (C#) and the Tallow-folk (GDScript).
-/// Each map is a grid of 8 m rooms joined by doorway "links"; a link with a door id is
-/// only walkable once Game.flag("door_&lt;id&gt;") is set. Breadth-first search over rooms,
-/// returning the next doorway (or the next room's centre once in the doorway).
+/// Room-graph pathfinding for the Bellman (C#) and the Tallow-folk (GDScript).
+/// Maps are grids of 8 m rooms joined by doorway links; a link with a door id only
+/// opens once Game.flag("door_&lt;id&gt;") is set. BFS over rooms, returns the next
+/// doorway (or the next room's centre once you're in it).
 /// </summary>
 [GlobalClass]
 public partial class WaypointGraph : RefCounted

@@ -100,9 +100,9 @@ static func _aabb(n: Node, xf: Transform3D, acc: Array) -> void:
 		_aabb(c, xf, acc)
 
 
-## Places a prop with its footprint centred on pos (floor at pos.y).
-## size: target size along the model's longest horizontal axis (metres), or
-## a uniform scale when negative. Returns the pivot node.
+## Places a prop centred on pos (floor at pos.y). size is the target length
+## along its longest horizontal axis in metres; negative means uniform scale.
+## Returns the pivot node.
 static func prop(parent: Node3D, name: String, pos: Vector3, rot_y: float = 0.0, size: float = -2.0, collide_layer: int = 2, tint := Color(1, 1, 1), by_height: bool = false) -> Node3D:
 	var path := "res://assets/props/%s.glb" % name
 	if not _scenes.has(path):

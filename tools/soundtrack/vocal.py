@@ -132,6 +132,10 @@ def retime_and_pitch(f0, sp, ap, sylls, vnotes, lead, offset_frames):
     s2f = lambda s: int(round((s + lead) / VSR * fs))   # noqa: E731
     beat_f = C.BEAT * fs
     segs_f0, segs_sp, segs_ap, tgt = [], [], [], []
+    # frame energy (dB) - used to keep vowels on their loud, steady core and to drop
+    # dead-silent consonant frames (stop closures) that sounded like the voice cutting out
+    E = 10 * np.log10(sp.sum(axis=1) + 1e-20)
+    syl_gain_idx = []
     # onset of syllable 0 precedes its note
     # line-initial consonant: reach 40 ms back into Piper's lead-in (alignment often clips it)
     sylls[0] = dict(sylls[0], start=max(-lead, sylls[0]["start"] - int(0.04 * VSR)))
@@ -155,13 +159,35 @@ def retime_and_pitch(f0, sp, ap, sylls, vnotes, lead, offset_frames):
             note_end -= 0.08 * fs   # release a little before the end of the line's last note
         onset = onset[:int(0.14 * fs)] if len(onset) > 0.14 * fs else onset
         coda = coda[:int(0.12 * fs)]
+        # vowel core: voiced frames within 8 dB of the vowel's peak
+        vall = np.arange(v0, max(v1, v0 + 1))
+        vall = vall[(vall >= 0) & (vall < len(f0))]
+        if len(vall) == 0:
+            vall = np.array([min(max(v0, 0), len(f0) - 1)])
+        peak = E[vall].max()
+        core = vall[(E[vall] >= peak - 8) & (f0[vall] > 0)]
+        if len(core) < 2:
+            core = vall[E[vall] >= peak - 8]
+        # drop near-silent consonant frames (keep at most 3 = 15 ms of closure)
+        def _trim(fr):
+            quiet = [f for f in fr if 0 <= f < len(E) and E[f] < peak - 38]
+            drop = set(quiet[3:])
+            return [f for f in fr if f not in drop]
+        onset, coda = _trim(onset), _trim(coda)
         vow_len = int(round(note_end - nxt_on - cursor - len(onset) - len(coda)))
         vow_len = max(vow_len, 4)
-        vsrc = np.arange(v0, max(v1, v0 + 1))
-        # stretch: linear map with slight "breathing" so long vowels are not a frozen frame
-        idx = np.linspace(0, len(vsrc) - 1, vow_len)
-        idx = idx + 0.15 * len(vsrc) * np.sin(np.linspace(0, np.pi * 2, vow_len)) * (len(vsrc) > 6)
+        vsrc = core
+        # stretch: ping-pong through the core so long vowels move a little but never
+        # wander into the quiet edges of the vowel
+        if len(vsrc) > 1:
+            period = 2 * (len(vsrc) - 1)
+            step = max(1.0, (len(vsrc) - 1) / max(vow_len - 1, 1)) if vow_len < len(vsrc) else 0.5
+            ph = (np.arange(vow_len) * step) % period
+            idx = np.where(ph < len(vsrc), ph, period - ph)
+        else:
+            idx = np.zeros(vow_len)
         idx = np.clip(idx, 0, len(vsrc) - 1).astype(int)
+        syl_gain_idx.append((len(segs_sp) + len(onset), len(segs_sp) + len(onset) + vow_len, peak))
         frames = onset + list(vsrc[idx]) + coda
         kinds = ["c"] * len(onset) + ["v"] * vow_len + ["c"] * len(coda)
         frames = [min(max(0, f), len(f0) - 1) for f in frames]
@@ -173,6 +199,18 @@ def retime_and_pitch(f0, sp, ap, sylls, vnotes, lead, offset_frames):
         cursor += len(frames)
     sp_n = np.array(segs_sp)
     ap_n = np.array(segs_ap)
+    # even out syllable loudness: each syllable is pulled toward the line's median
+    # vowel level (-6..+12 dB), with a smoothed gain curve so there are no steps
+    peaks = np.array([p for _, _, p in syl_gain_idx])
+    target = np.median(peaks)
+    gdb = np.zeros(len(sp_n))
+    bounds = [a for a, _, _ in syl_gain_idx] + [len(sp_n)]
+    starts = [0] + bounds[1:-1]
+    for k, (_, _, p) in enumerate(syl_gain_idx):
+        gdb[starts[k]:bounds[k + 1]] = np.clip(target - p, -6, 12)
+    sm = int(0.04 * fs) | 1
+    gdb = np.convolve(np.pad(gdb, (sm, sm), mode="edge"), np.ones(sm) / sm, mode="same")[sm:-sm]
+    sp_n = sp_n * (10 ** (gdb / 10))[:, None]
     # target f0 with portamento + delayed vibrato + drift
     n = len(tgt)
     midi = np.array([t[0] for t in tgt], float)

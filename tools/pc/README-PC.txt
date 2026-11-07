@@ -26,6 +26,10 @@ GAMEPAD (Xbox layout)
   Move: left stick / D-pad   Examine: A   Run: B   Aim: RB   Fire: X
   Quick turn: Y   Flashlight: LB   Items: Back   Pause: Start
 
+SOUNDTRACK
+  The Soundtrack folder has both versions of the main theme as MP3s,
+  plus the lyrics. Free to listen to and share (GPL-3.0).
+
 SETTINGS
   Tank (classic) or Modern controls, brightness, volume, CRT, shadows,
   door scenes and fullscreen. Saved automatically.

@@ -130,7 +130,7 @@ const ITEM_INFO := {
 }
 
 
-var graph: RefCounted = null   # C# WaypointGraph (csharp/WaypointGraph.cs)
+var graph: RefCounted = null  # C# WaypointGraph
 
 
 func _ready() -> void:
@@ -170,9 +170,8 @@ func _ready() -> void:
 		_show_title()
 
 
-## Phones: leaving the app (home button, a call, the notification shade) pauses
-## the game and lets go of the touch stick, so nobody walks into the Bellman
-## while the app is in the background.
+## Phones: backgrounding the app pauses and lets go of the touch stick,
+## so you don't come back to find you walked into the Bellman.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
 		if touch != null:
@@ -189,7 +188,7 @@ func box(parent: Node3D, size: Vector3, pos: Vector3, texname: String, col: Colo
 	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = size
-	# Subdivide big faces (~1 m) so PS1 affine warping wobbles instead of tearing.
+	# subdivide big faces (~1 m) so affine warping wobbles instead of tearing
 	bm.subdivide_width = clampi(int(size.x / 1.0), 0, 10)
 	bm.subdivide_height = clampi(int(size.y / 1.0), 0, 10)
 	bm.subdivide_depth = clampi(int(size.z / 1.0), 0, 10)
@@ -296,9 +295,9 @@ func _link_between(map: String, a: Vector2i, b: Vector2i) -> Array:
 	return []
 
 
-## Mobile cost: the GL Compatibility renderer draws every object once more for
-## each light touching it. Lights are culled per room: a room's own lights, plus
-## the ceiling bulbs of the rooms its doorways open onto (see _update_lights).
+## GL Compatibility redraws each object once per light touching it, so lights
+## are culled per room: its own lights plus the ceiling bulbs of rooms its
+## doorways open onto (see _update_lights).
 var light_cell: Dictionary = {}   # light -> [map, cell, is_ceiling]
 
 
@@ -359,7 +358,6 @@ func _build_map(map: String) -> void:
 		var lt := _add_light(root, "%s_%s" % [map, c], ctr + Vector3(0, 2.45, 0), r["light"], energy, 10.5, r.get("flicker", false))
 		if r.get("needs_power", false) and not Game.flag("power"):
 			lt.light_energy = 0.08
-		# fixed camera
 		var cam := Camera3D.new()
 		cam.fov = 64.0
 		cam.near = 0.05
@@ -373,8 +371,8 @@ func _build_map(map: String) -> void:
 	_build_props(map, root)
 
 
-## A moonlit window on an outer wall: glowing pane, cross bars, and a cool spot
-## light falling across the floor (light motivation for dark rooms).
+## Moonlit window on an outer wall: glowing pane, bars, and a cool spot
+## light on the floor so dark rooms have a light source.
 func _moon_window(root: Node3D, map: String, c: Vector2i, o: Vector3, rot_y: float, target: Vector3) -> void:
 	var pos := _off(map, c, o)
 	var q := _glow_quad(root, Vector2(1.3, 1.5), pos, Vector3(0, rot_y, 0), Color(0.32, 0.42, 0.62), false)
@@ -396,7 +394,7 @@ func _moon_window(root: Node3D, map: String, c: Vector2i, o: Vector3, rot_y: flo
 
 
 func _wall_segment(root: Node3D, size: Vector3, center: Vector3, r: Dictionary, along_x: bool) -> void:
-	# Plaster/wallpaper above, dark wood wainscot below, like a 1950s institution.
+	# plaster/wallpaper over dark wood wainscot, 1950s institution look
 	var low := 1.0
 	var hi := size.y - low
 	var c := center
@@ -760,7 +758,7 @@ func _build_enemies() -> void:
 	if Game.flag("tallow1_dead"):
 		z.die()
 
-	var b: CharacterBody3D = BellmanScript.new()   # C# (csharp/Bellman.cs)
+	var b: CharacterBody3D = BellmanScript.new()  # C#
 	b.main = self
 	b.collision_layer = 8
 	b.collision_mask = 1 | 4
@@ -841,7 +839,7 @@ func _loop_player(n: String, vol: float) -> AudioStreamPlayer:
 	a.stream = st
 	a.volume_db = vol
 	a.name = n
-	a.bus = &"SFX"   # ambience follows the SFX volume; title_music is moved to Music
+	a.bus = &"SFX"  # ambience rides SFX; title_music goes on Music
 	add_child(a)
 	a.play()
 	return a
@@ -866,7 +864,7 @@ func _apply_state() -> void:
 
 # ---------------------------------------------------------------- helpers
 
-const MAX_VOICES := 4   # copies of one sound playing at once (the self-typing typewriter used to stack dozens)
+const MAX_VOICES := 4  # max copies of one sound at once (the self-typing typewriter piles up otherwise)
 var voices: Dictionary = {}
 
 
@@ -931,7 +929,7 @@ func make_noise(pos: Vector3, radius: float) -> void:
 		bellman.hear(pos, radius)
 
 
-## Room-graph pathfinding lives in C# (WaypointGraph.cs); used by both enemies.
+## Pathfinding is in C# (WaypointGraph.cs), shared by both enemies.
 func next_waypoint(map: String, from: Vector3, to: Vector3, blocked: Array) -> Vector3:
 	return graph.next_waypoint(map, from, to, blocked)
 
@@ -1049,7 +1047,7 @@ func bellman_grab(difficulty: float) -> void:
 	if p.hidden_in != "":
 		_unhide(p)
 	Game.mode = "struggle"
-	# Capped: 23 presses in 3.2 s was unwinnable on a touchscreen.
+	# capped so it stays winnable on a touchscreen
 	struggle_need = mini(int(7.0 + panic / 10.0 * difficulty), 15)
 	struggle_count = 0
 	struggle_t = 3.2
@@ -1100,8 +1098,8 @@ func die(reason: String) -> void:
 	set_meta("death_reason", reason)
 	var tw := create_tween()
 	tw.tween_method(func(v: float) -> void: post_mat.set_shader_parameter("fade", v), 0.0, 0.6, 1.5)
-	# Node-bound tween instead of a SceneTreeTimer: a tree timer outlives a scene
-	# reload and would call into the freed level.
+	# tween on the node, not a SceneTreeTimer: tree timers survive a scene
+	# reload and call into the freed level
 	create_tween().tween_callback(func() -> void:
 		if Game.mode == "dead":
 			_render_death()).set_delay(1.2)
@@ -1299,7 +1297,7 @@ func _show_note(key: String) -> void:
 	var body: String = n[1]
 	if body.contains("%s"):
 		body = body % Game.glyph("interact")
-	# Documents use the framed reader: wrapped, scrollable, controls in the footer.
+	# docs use the framed reader (wraps, scrolls, controls in the footer)
 	hud.show_overlay(n[0], body, Color(0.86, 0.84, 0.78), 0.88, _note_hint(key == "intro"), true)
 	play_sfx("pickup", null, -6.0)
 
@@ -1347,7 +1345,7 @@ func _render_menu() -> void:
 		body += "   ...\n"
 	if menu_desc.is_valid():
 		body += "\n" + str(menu_desc.call(menu_index)) + "\n"
-	# Controls sit in the reader's footer so a long menu can't push them off screen.
+	# controls go in the footer so a long menu can't push them off screen
 	var hint := ("Left/Right change   %s toggle   %s back" if menu_adjust.is_valid() else "%s choose   %s back") % [Game.glyph("interact"), Game.glyph("cancel")]
 	hud.show_overlay(menu_title, body.strip_edges(false, true), Color(0.86, 0.84, 0.78), 0.88, hint)
 	hud.follow_line("> ")
@@ -2115,8 +2113,7 @@ func _update_camera() -> void:
 		if not first and _doors_on() and Game.mode == "play" and door_cool <= 0.0 and players[who].hidden_in == "":
 			_door_sequence(r)
 		elif not first:
-			# Quick transition (door animations off, or just walked back through):
-			# a short fade through black with a creak.
+			# quick fade through black with a creak (door scenes off, or walked straight back)
 			door_t = 0.45
 			post_mat.set_shader_parameter("fade", 1.0)
 			var tw := create_tween()
@@ -2136,10 +2133,9 @@ func _update_camera() -> void:
 
 
 # ---------------------------------------------------------------- door scene
-## Resident Evil-style room change: black, a door creaks open in front of the
-## camera as it pushes through, black again, new room. ~1.5 s, skippable with
-## interact/cancel, off in Settings. A 2 s cooldown stops it replaying if you
-## step straight back through the same doorway.
+## RE-style room change: black, a door creaks open as the camera pushes
+## through, black, new room. ~1.5 s, skippable, can be turned off in Settings.
+## 2 s cooldown so it doesn't replay if you step straight back.
 
 const DOOR_STAGE := Vector3(0, -200, 0)
 const DOOR_SECS := 1.5
@@ -2282,7 +2278,7 @@ func _update_audio_and_fx(delta: float) -> void:
 			if d < 13.0:
 				target_db = maxf(target_db, lerpf(-34.0, -9.0, 1.0 - d / 13.0))
 	static_player.volume_db = lerpf(static_player.volume_db, target_db, minf(1.0, delta * 6.0))
-	# Silent loops still cost a Vorbis decoder each; pause them while inaudible (phones).
+	# silent loops still hold a Vorbis decoder each, so pause them (phones)
 	for ap in [title_music, static_player, amb_player, amb2_player, rain]:
 		ap.stream_paused = ap.volume_db <= -79.0
 

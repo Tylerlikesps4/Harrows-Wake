@@ -1,7 +1,7 @@
 extends Node
-## Regression tests for bugs fixed in build-9:  godot --headless -- --regress
-## One check per fixed bug. The last check reloads the scene (quit to title)
-## and finishes in the fresh scene, like the smoke test's retry phase.
+## Regression checks:  godot --headless -- --regress
+## One check per bug. The last one reloads the scene (quit to title) and
+## finishes in the fresh scene, like the smoke test's retry phase.
 var m
 var f := 0
 var t := 0.0
@@ -47,7 +47,7 @@ func _process(d: float) -> void:
 			Game.set_setting("music", 0)
 			ok(AudioServer.is_bus_mute(AudioServer.get_bus_index("Music")), "Music volume 0 mutes the Music bus")
 			Game.set_setting("music", old)
-			# Voice limiter: the self-typing typewriter used to stack dozens of players.
+			# voice limiter: the self-typing typewriter can't stack players
 			for i in 12:
 				m.play_sfx("typewriter", Vector3(100, 1, 0))
 			ok(int(m.voices.get("typewriter", 0)) == m.MAX_VOICES, "One sound can't stack past %d voices (%d)" % [m.MAX_VOICES, int(m.voices.get("typewriter", 0))])
@@ -61,8 +61,7 @@ func _process(d: float) -> void:
 			m.struggle_count = 999
 		5:
 			ok(Game.mode == "play", "Struggle resolves back to play")
-			# Bellman stuck: a target he can't reach (the Mail Room he never enters)
-			# used to freeze him forever in SEARCH.
+			# Bellman stuck: an unreachable target (the Mail Room) mustn't freeze him in SEARCH
 			var p = m.players["jenny"]
 			p.global_position = m._off("jenny", Vector2i(0, 0), Vector3(-1, 0.05, 0.5))
 			p.hidden_in = "test"     # keep him from seeing her
@@ -76,7 +75,7 @@ func _process(d: float) -> void:
 			t = 0.0
 		300:
 			ok(m.bellman.state != m.bellman.S.SEARCH, "Bellman gives up on an unreachable target (state %d)" % m.bellman.state)
-			# FOUND used to last forever once you escaped into the Mail Room.
+			# FOUND has to end once you escape into the Mail Room
 			var p = m.players["jenny"]
 			p.hidden_in = ""
 			p.global_position = m._off("jenny", Vector2i(1, 1), Vector3(0, 0.05, 0))
@@ -96,7 +95,7 @@ func _process(d: float) -> void:
 			ok(Game.mode == "menu" and m.menu_title == "PAUSED", "Leaving the app pauses the game")
 			ok(not Input.is_action_pressed("move_forward"), "Leaving the app releases the touch stick")
 			m._close_menu()
-			# Touch controls OFF on a phone used to be a softlock (no way back to Settings).
+			# touch controls OFF on a phone: a tap must bring them back (no softlock)
 			m.touch.touch_capable = true
 			Game.settings["touch"] = false
 			m.touch.apply_settings()
@@ -124,7 +123,7 @@ func _process(d: float) -> void:
 			var lamp: MeshInstance3D = m.get_node("dana/fuse_lamp")
 			var col: Color = lamp.material_override.get_shader_parameter("albedo_color")
 			ok(Game.flag("power") and col.g > 0.9 and col.r < 0.5, "Fuse box lamp turns green when powered")
-			# Timers bound to the level (a SceneTreeTimer outlives a scene reload).
+			# timers bound to the level (a SceneTreeTimer survives a scene reload)
 			var src := FileAccess.get_file_as_string("res://scripts/main.gd")
 			ok(not src.contains("get_tree().create_timer("), "No scene-tree timers left in main.gd")
 			# Light culling: only this room's lights + neighbouring ceiling bulbs.
@@ -161,8 +160,8 @@ func _process(d: float) -> void:
 		420:
 			ok(Game.mode == "play" and m.cameras["dana"][Vector2i(1, 0)].current and not m.door_stage.visible, "Door scene ends by itself in about 1.5 s")
 			Game.settings["doors"] = false
-			# Quit to title after progress: the world must be rebuilt fresh, or NEW GAME
-			# starts with the fuse already taken (softlock).
+			# quit to title after progress: world must rebuild fresh or NEW GAME
+			# starts with the fuse already gone (softlock)
 			Game.give("jenny", "Fuse")
 			Game.set_flag("picked_fuse")
 			Game.set_flag("tallow1_dead")
@@ -171,9 +170,8 @@ func _process(d: float) -> void:
 			m.menu_cb.call(3)   # Quit to title
 
 
-## Lore documents were cut off at the screen edges on phones (build-9): every
-## document panel must sit inside the viewport and the display safe area, clear of
-## the touch buttons, with all of its text reachable by scrolling.
+## Lore docs on phones: every panel must fit the viewport and safe area,
+## stay clear of the touch buttons, and scroll to show all its text.
 func _check_reader() -> void:
 	var root := get_tree().root
 	var old_size := root.size
@@ -182,8 +180,8 @@ func _check_reader() -> void:
 	m.touch.visible = true   # as on a phone
 	var sizes := [Vector2i(2400, 1080), Vector2i(2340, 1080), Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(1024, 768)]
 	for sz: Vector2i in sizes:
-		# Plain screen, then the same phone with a camera cutout on the left and a
-		# rounded-corner inset on the right (safe area in window pixels).
+		# plain screen, then the same phone with a cutout on the left and a
+		# rounded-corner inset on the right (safe area in window pixels)
 		for notch in [false, true]:
 			hud.safe_override = Rect2(120, 0, sz.x - 120 - 48, sz.y) if notch else Rect2()
 			root.size = sz

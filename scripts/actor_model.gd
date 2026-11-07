@@ -1,8 +1,7 @@
 extends Node3D
-## Animated character model built from Quaternius' CC0 Universal Animation Library
-## mannequins. Clothing is baked into vertex colours from the rest pose, the PSX
-## shader is applied, and the model follows its physics body with interpolation
-## (so movement looks smooth on 90/120 Hz phone screens).
+## Animated character on Quaternius' CC0 mannequins (Universal Animation Library).
+## Clothes are baked into vertex colours, PSX shader on top, and it interpolates
+## after its physics body so it stays smooth on 90/120 Hz screens.
 
 const PSX_SHADER := preload("res://shaders/psx.gdshader")
 const BASE := "res://assets/models/mannequin.glb"
@@ -118,7 +117,7 @@ func _process(_d: float) -> void:
 		return
 	var f: float = Engine.get_physics_interpolation_fraction()
 	var t: Transform3D = _prev.interpolate_with(_cur, f)
-	# Teleports (room changes, switching survivors) snap instead of sliding.
+	# teleports (room change, survivor swap) snap instead of sliding
 	if _prev.origin.distance_to(_cur.origin) > 2.0:
 		t = _cur
 	global_transform = t
@@ -217,7 +216,7 @@ static func _baked_mesh(src: Mesh, st: String) -> Mesh:
 	if _mesh_cache.has(key):
 		return _mesh_cache[key]
 	var out := ArrayMesh.new()
-	# Which way is "front" in the rest pose? Toes stick out forward.
+	# work out which way is front from the toes
 	var zsum := 0.0
 	var zn := 0
 	for s in src.get_surface_count():
@@ -310,7 +309,7 @@ func _accessories() -> void:
 				var hm := _mat(Color(0.05, 0.045, 0.04), 0.0, "dirty_carpet")
 				_mesh(h, _cyl(0.3, 0.3, 0.02, 10), Vector3(0, 0.2, 0), hm)
 				_mesh(h, _cyl(0.13, 0.15, 0.24, 8), Vector3(0, 0.32, 0), hm)
-				# Faint eye-shine so he reads in the dark.
+				# faint eye-shine so he reads in the dark
 				var em := _mat(Color(1.0, 0.85, 0.55), 3.0, "plastered_wall_02")
 				for sx in [-0.03, 0.03]:
 					var s := SphereMesh.new()
@@ -354,9 +353,8 @@ func _accessories() -> void:
 
 
 # ------------------------------------------------------------ faces
-# Low-res painted faces (32x40 px, nearest filtered) on a quad riding the head
-# bone, PS1 style. Pixel rows map to head-local height: row 0 = +0.19 m,
-# row 40 = -0.03 m (eyes ~row 13, mouth ~row 31).
+# 32x40 painted faces on a quad stuck to the head bone, PS1 style.
+# row 0 = +0.19 m, row 40 = -0.03 m (eyes ~13, mouth ~31)
 
 static var _face_cache: Dictionary = {}
 
@@ -401,7 +399,7 @@ static func face_image(st: String) -> Image:
 				for x in [8, 9, 12, 13, 17, 21, 22]:
 					_rectpx(img, x, 3, 1, 4 + (x % 3), brow)
 		"bellman":
-			# A cracked porcelain mask, eye holes, a mouth sewn shut with black thread.
+			# cracked porcelain mask, mouth sewn shut
 			var mask := Color(0.88, 0.86, 0.8)
 			for y in 40:
 				for x in 32:
@@ -424,7 +422,7 @@ static func face_image(st: String) -> Image:
 				_px(img, 22 + int(i * 0.4), 2 + i * 2, Color(0.25, 0.22, 0.2))
 				_px(img, 22 + int(i * 0.4), 3 + i * 2, Color(0.25, 0.22, 0.2))
 		"tallow":
-			# Melted features: sagging sockets at different heights, a gaping mouth, drips.
+			# melted face: uneven sockets, gaping mouth, drips
 			var sock := Color(0.12, 0.05, 0.02)
 			_rectpx(img, 8, 12, 5, 4, sock)
 			_rectpx(img, 9, 16, 3, 3, sock)

@@ -120,6 +120,7 @@ jobs:
           test -f out/win/HarrowsWake.exe
           # C# builds ship the .NET assemblies in a data_* folder next to the exe.
           cp tools/pc/README-PC.txt out/win/README.txt
+          cp -r tools/pc/soundtrack out/win/Soundtrack
           (cd out/win && zip -qr ../HarrowsWake-Windows.zip .)
           ls -la out
 
@@ -130,6 +131,7 @@ jobs:
           test -f out/linux/HarrowsWake.x86_64
           chmod +x out/linux/HarrowsWake.x86_64
           cp tools/pc/README-PC.txt out/linux/README.txt
+          cp -r tools/pc/soundtrack out/linux/Soundtrack
           ls -la out/linux
           (cd out/linux && zip -qr ../HarrowsWake-Linux.zip .)
 
@@ -143,6 +145,13 @@ jobs:
           unzip -l out/HarrowsWake.apk | sort -nr | head -12
           ! unzip -l out/HarrowsWake.apk | grep -E "\.a$|assets/out/"
 
+      - name: Package soundtrack
+        run: |
+          mkdir -p "out/Harrow's Wake OST"
+          cp tools/pc/soundtrack/* "out/Harrow's Wake OST/"
+          (cd out && zip -qr HarrowsWake-Soundtrack.zip "Harrow's Wake OST")
+          unzip -l out/HarrowsWake-Soundtrack.zip
+
       - uses: actions/upload-artifact@v4
         with:
           name: HarrowsWake-builds
@@ -150,14 +159,16 @@ jobs:
             out/HarrowsWake.apk
             out/HarrowsWake-Windows.zip
             out/HarrowsWake-Linux.zip
+            out/HarrowsWake-Soundtrack.zip
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Harrow's Wake build ${{ github.run_number }}
-          body: Free demo build (Godot 4.3 .NET, C# + GDScript). On Android, download HarrowsWake.apk and allow installs from your browser. On Windows (PC/laptop), extract HarrowsWake-Windows.zip and run HarrowsWake.exe (keep the data_HarrowsWake folder next to it). On Linux, extract HarrowsWake-Linux.zip and run HarrowsWake.x86_64. README.txt inside has the controls; F11 or Alt+Enter toggles fullscreen.
+          body: Free demo build (Godot 4.3 .NET, C# + GDScript). On Android, download HarrowsWake.apk and allow installs from your browser. On Windows (PC/laptop), extract HarrowsWake-Windows.zip and run HarrowsWake.exe (keep the data_HarrowsWake folder next to it). On Linux, extract HarrowsWake-Linux.zip and run HarrowsWake.x86_64. README.txt inside has the controls; F11 or Alt+Enter toggles fullscreen. The Soundtrack folder (and HarrowsWake-Soundtrack.zip) has the main theme as MP3s.
           files: |
             out/HarrowsWake.apk
             out/HarrowsWake-Windows.zip
             out/HarrowsWake-Linux.zip
+            out/HarrowsWake-Soundtrack.zip

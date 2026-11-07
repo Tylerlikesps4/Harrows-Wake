@@ -5,11 +5,9 @@ using GDict = Godot.Collections.Dictionary;
 namespace HarrowsWake;
 
 /// <summary>
-/// Global game state, saves and settings (autoload "Game"; the class is GameState so
-/// it doesn't clash with the autoload name). Ported from GDScript.
-/// Members use snake_case names on purpose so the GDScript side (main.gd, player.gd,
-/// hud.gd, touch.gd, tests) keeps calling them exactly as before: Game.state,
-/// Game.flag("x"), Game.settings["brightness"], Game.settings_changed.connect(...).
+/// Global state, saves and settings (autoload "Game"; class is GameState so it
+/// doesn't clash). snake_case members so GDScript calls Game.state, Game.flag("x"),
+/// Game.settings["brightness"] etc. directly.
 /// </summary>
 public partial class GameState : Node
 {
@@ -28,7 +26,7 @@ public partial class GameState : Node
 		{ "crt", true },
 		{ "invert_y", false },
 		{ "shadows", true },     // flashlight shadows
-		{ "fps", false },        // FPS counter
+		{ "fps", false },
 		{ "touch", true },       // on-screen controls (touchscreens only)
 		{ "doors", true },       // RE-style door scene between rooms (skippable)
 	};
@@ -85,7 +83,7 @@ public partial class GameState : Node
 			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
 	}
 
-	// Built once: glyph() runs every frame for the interaction prompt, so it must not allocate.
+	// built once: glyph() runs every frame for the prompt, so no allocating
 	static readonly System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>> GLYPHS = new()
 	{
 		["keyboard"] = new() { ["interact"] = "[E]", ["run"] = "[Shift]", ["aim"] = "[K]", ["fire"] = "[J]", ["quick_turn"] = "[Q]", ["inventory"] = "[Tab]", ["cancel"] = "[Esc]", ["flashlight"] = "[F]", ["pause"] = "[Esc]", ["breath"] = "[Shift]" },
@@ -227,9 +225,9 @@ public partial class GameState : Node
 		return true;
 	}
 
-	/// Back to the title screen with a fresh state. The level is built from Game.state,
-	/// so returning with the finished/dead run's flags would rebuild the world with the
-	/// fuse and key already taken and NEW GAME would softlock (fixed in build-9).
+	/// Back to title with a fresh state. The level is built from Game.state, so
+	/// keeping the old run's flags would spawn the world with the fuse and key gone
+	/// and NEW GAME would softlock.
 	public void go_to_title()
 	{
 		new_game();

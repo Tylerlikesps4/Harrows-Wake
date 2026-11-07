@@ -1,12 +1,10 @@
 extends CanvasLayer
-## Minimal 1998-style HUD built in code. The canvas is 240 px tall; its width
-## follows the phone's aspect ratio (stretch aspect "expand").
-## Everything is placed inside the display safe area (notches, rounded corners).
-## Documents, menus and end screens share one reader panel: it is sized to the
-## screen (<= 90% of the safe width, 85% of its height), wraps its text, scrolls
-## long documents (drag, stick or Up/Down) and keeps clear of the touch buttons.
+## 1998-style HUD built in code. Canvas is 240 px tall, width follows the
+## screen aspect (stretch "expand"). Everything stays inside the safe area.
+## Docs, menus and end screens share one reader panel (<= 90% safe width,
+## 85% height) that wraps, scrolls and keeps clear of the touch buttons.
 
-const BOX_MAX_W := 360.0   # a comfortable reading column (~70 characters)
+const BOX_MAX_W := 360.0  # ~70 chars, easy to read
 const BODY_FONT := 9
 const PAD := 6.0
 
@@ -36,7 +34,7 @@ var ov_more := false
 var ov_follow := ""            # menu line to keep in view after the next layout
 var ov_rect := Rect2()         # where the panel sits (canvas pixels)
 var touch_ref: Node = null     # set by main; its buttons are kept clear of the panel
-## Tests: pretend the device reports this safe area (window pixels, e.g. a notch).
+## Tests: fake the device safe area (window pixels, e.g. a notch).
 var safe_override := Rect2()
 var fps: Label
 var get_bg: ColorRect
@@ -71,7 +69,7 @@ func _ready() -> void:
 	breath_lbl = _label(Vector2(110, 156), 8, HORIZONTAL_ALIGNMENT_CENTER, Vector2(100, 12))
 	breath_lbl.text = "BREATH"
 	set_breath(-1.0)
-	# "Item get" banner: name + description, slides in and fades.
+	# "item get" banner, slides in and fades
 	get_bg = _rect(Vector2(40, 150), Vector2(240, 34), Color(0.02, 0.02, 0.02, 0.8))
 	get_title = _label(Vector2(44, 152), 10, HORIZONTAL_ALIGNMENT_CENTER, Vector2(232, 12))
 	get_title.add_theme_color_override("font_color", Color(0.95, 0.82, 0.45))
@@ -124,8 +122,7 @@ func _layout() -> void:
 	layout_overlay()
 
 
-## The usable part of the canvas: the display safe area (cutouts, rounded
-## corners, system bars) mapped from window pixels to canvas pixels.
+## Usable canvas area: the display safe area mapped from window to canvas pixels.
 func safe_rect() -> Rect2:
 	var vis: Vector2 = get_viewport().get_visible_rect().size
 	var win := Vector2(get_window().size)
@@ -135,7 +132,7 @@ func safe_rect() -> Rect2:
 	var sa: Rect2 = safe_override if safe_override.has_area() else Rect2(DisplayServer.get_display_safe_area())
 	var inter := wr.intersection(sa) if sa.has_area() else wr
 	if inter.size.x < win.x * 0.5 or inter.size.y < win.y * 0.5:
-		inter = wr  # nonsense report (desktop window off-screen etc.): use the window
+		inter = wr # bogus report (window off-screen etc), just use the window
 	var k := vis / win
 	return Rect2((inter.position - wr.position) * k, inter.size * k)
 
@@ -200,8 +197,8 @@ func layout_overlay() -> void:
 	var bw := minf(sr.size.x * 0.9, BOX_MAX_W)
 	var bh := sr.size.y * 0.85
 	var box := Rect2(sr.get_center() - Vector2(bw, bh) / 2.0, Vector2(bw, bh))
-	# Keep the touch buttons that stay up on menus/documents off the text: give up
-	# whichever strip of the panel (top, bottom or both sides) costs the least.
+	# keep the touch buttons off the text; drop whichever strip of the panel
+	# (top, bottom or sides) costs the least
 	if touch_ref != null and touch_ref.visible and touch_ref.has_method("overlay_rects"):
 		for r: Rect2 in touch_ref.overlay_rects():
 			if not box.intersects(r):
@@ -226,7 +223,7 @@ func layout_overlay() -> void:
 	var inner := box.size.x - PAD * 2.0
 	ov_title.custom_minimum_size.x = inner
 	ov_hint.custom_minimum_size.x = inner
-	ov_body.custom_minimum_size.x = inner - 6.0  # room for the thin scrollbar
+	ov_body.custom_minimum_size.x = inner - 6.0 # room for the scrollbar
 	overlay.size = s
 
 
@@ -241,9 +238,8 @@ func _text_h(l: Label, text: String, width: float, fsize: int) -> float:
 	return lines * (fh + l.get_theme_constant("line_spacing"))
 
 
-## The lane for messages and the item banner: centered in the safe area, as wide
-## as wanted but clear of the touch stick/buttons. On a narrow screen (4:3
-## tablet) where the gap between them is too small, the lane rises above them.
+## Lane for messages and the item banner: centered, clear of the touch
+## controls. On narrow screens (4:3 tablets) it moves up above them.
 ## Returns Vector3(x, width, bottom).
 func _bottom_lane(want_w: float) -> Vector3:
 	var s: Vector2 = get_viewport().get_visible_rect().size
@@ -271,7 +267,7 @@ func _bottom_lane(want_w: float) -> Vector3:
 	return Vector3(cx - w / 2.0, w, bottom)
 
 
-## Messages grow upward from just above the prompt line instead of off the bottom.
+## Messages grow upward from above the prompt line.
 func _fit_message() -> void:
 	var lane := _bottom_lane(300.0)
 	message.position.x = lane.x
@@ -287,7 +283,7 @@ func _fit_tutorial() -> void:
 	tut_bg.size.y = h + 4.0
 
 
-## The "item get" banner grows to fit the description and ends above the message.
+## Item banner grows to fit the description and ends above the message.
 func _fit_banner() -> void:
 	var lane := _bottom_lane(240.0)
 	var w := lane.y
@@ -300,7 +296,7 @@ func _fit_banner() -> void:
 	get_bg.position.x = lane.x
 	var above := message.position.y - 4.0 if message.text != "" else lane.z - 34.0
 	get_bg.position.y = minf(150.0, above - get_bg.size.y)
-	# Narrow touch screens push the lane up; never slide under the tutorial box.
+	# narrow screens push the lane up; never go under the tutorial box
 	if tut_bg.visible and tut_t > 0.0 and get_bg.position.y < tut_bg.position.y + tut_bg.size.y + 3.0:
 		get_bg.position.y = tut_bg.position.y + tut_bg.size.y + 3.0
 		if message.text != "":
@@ -344,7 +340,7 @@ func _rect(pos: Vector2, sz: Vector2, col: Color) -> ColorRect:
 func set_hud_visible(v: bool) -> void:
 	for n in [status, ammo, prompt, stamina_bg, stamina_bar, message]:
 		n.visible = v
-	# The tutorial text used to linger on the title/credits without its box.
+	# hide the tutorial text with its box (title/credits)
 	tutorial.visible = v
 	tut_bg.visible = v and tut_t > 0.0
 
@@ -456,7 +452,7 @@ func update_status(who: String, hp: int, max_hp: int, ammo_count: int, stamina: 
 		col = Color(0.95, 0.7, 0.15)
 	var st := "%s   %s" % [who.to_upper(), cond]
 	if st != status.text:
-		# Theme overrides re-layout the label; only touch it when the condition changes.
+		# theme overrides force a re-layout, so only touch it on change
 		status.text = st
 		status.add_theme_color_override("font_color", col)
 	ammo.text = ("HANDGUN %d" % ammo_count) if who == "dana" else ""

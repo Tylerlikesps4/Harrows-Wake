@@ -1415,6 +1415,7 @@ const SETTING_ROWS := [
 	["btn_size", "Touch button size", "float", 0.7, 1.5, 0.1],
 	["btn_opacity", "Touch button opacity", "float", 0.2, 1.0, 0.1],
 	["doors", "Door animations", "bool"],
+	["fullscreen", "Fullscreen (PC)", "bool"],
 ]
 
 
@@ -1485,6 +1486,8 @@ func _open_settings(from_title: bool) -> void:
 				return "Swaps the stick's up and down for movement."
 			"doors":
 				return "The classic door-opening scene between rooms. %s skips it." % Game.glyph("interact")
+			"fullscreen":
+				return "PC and laptop only. F11 or Alt+Enter also toggles it."
 		return ""
 	_render_menu()
 

@@ -24,6 +24,7 @@ public partial class GameState : Node
 		{ "btn_size", 1.0 },     // touch button scale (0.7 - 1.5)
 		{ "btn_opacity", 0.8 },  // touch button opacity (0.2 - 1.0)
 		{ "tank", false },
+		{ "fullscreen", false },  // PC/laptop only (F11 or Alt+Enter toggles)
 		{ "crt", true },
 		{ "invert_y", false },
 		{ "shadows", true },     // flashlight shadows
@@ -55,12 +56,33 @@ public partial class GameState : Node
 
 	public override void _Input(InputEvent e)
 	{
+		// F11 or Alt+Enter toggles fullscreen on PC/laptop.
+		if (e is InputEventKey fk && fk.Pressed && !fk.Echo && !OS.HasFeature("mobile")
+			&& (fk.PhysicalKeycode == Key.F11 || (fk.AltPressed && (fk.PhysicalKeycode == Key.Enter || fk.PhysicalKeycode == Key.KpEnter))))
+		{
+			set_setting("fullscreen", !settings["fullscreen"].AsBool());
+			GetViewport().SetInputAsHandled();
+			return;
+		}
 		if (e is InputEventScreenTouch || e is InputEventScreenDrag)
 			input_kind = "touch";
 		else if (e is InputEventJoypadButton || (e is InputEventJoypadMotion jm && Mathf.Abs(jm.AxisValue) > 0.4f))
 			input_kind = "gamepad";
 		else if (e is InputEventKey || e is InputEventMouseButton)
 			input_kind = "keyboard";
+	}
+
+	/// PC/laptop: borderless fullscreen or the 1280x960 window. No-op on phones and headless runs.
+	void _apply_window()
+	{
+		if (OS.HasFeature("mobile") || DisplayServer.GetName() == "headless") return;
+		bool want = settings.ContainsKey("fullscreen") && settings["fullscreen"].AsBool();
+		var cur = DisplayServer.WindowGetMode();
+		bool isFull = cur == DisplayServer.WindowMode.Fullscreen || cur == DisplayServer.WindowMode.ExclusiveFullscreen;
+		if (want && !isFull)
+			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Fullscreen);
+		else if (!want && isFull)
+			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
 	}
 
 	// Built once: glyph() runs every frame for the interaction prompt, so it must not allocate.
@@ -135,6 +157,7 @@ public partial class GameState : Node
 		_vol("Master", settings["master"].AsInt32());
 		_vol("Music", settings["music"].AsInt32());
 		_vol("SFX", settings["sfx"].AsInt32());
+		_apply_window();
 		EmitSignal(SignalName.settings_changed);
 	}
 

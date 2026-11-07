@@ -119,8 +119,19 @@ jobs:
           ls -laR out/win | head -40
           test -f out/win/HarrowsWake.exe
           # C# builds ship the .NET assemblies in a data_* folder next to the exe.
+          cp tools/pc/README-PC.txt out/win/README.txt
           (cd out/win && zip -qr ../HarrowsWake-Windows.zip .)
           ls -la out
+
+      - name: Export Linux
+        run: |
+          mkdir -p out/linux
+          godot --headless --export-release "Linux" "$PWD/out/linux/HarrowsWake.x86_64"
+          test -f out/linux/HarrowsWake.x86_64
+          chmod +x out/linux/HarrowsWake.x86_64
+          cp tools/pc/README-PC.txt out/linux/README.txt
+          ls -la out/linux
+          (cd out/linux && zip -qr ../HarrowsWake-Linux.zip .)
 
       - name: Export Android APK
         run: |
@@ -135,14 +146,18 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: HarrowsWake-builds
-          path: out/
+          path: |
+            out/HarrowsWake.apk
+            out/HarrowsWake-Windows.zip
+            out/HarrowsWake-Linux.zip
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Harrow's Wake build ${{ github.run_number }}
-          body: Free demo build (Godot 4.3 .NET, C# + GDScript). On Android, download HarrowsWake.apk and allow installs from your browser. On Windows, extract the zip and run HarrowsWake.exe (keep the data_HarrowsWake folder next to it).
+          body: Free demo build (Godot 4.3 .NET, C# + GDScript). On Android, download HarrowsWake.apk and allow installs from your browser. On Windows (PC/laptop), extract HarrowsWake-Windows.zip and run HarrowsWake.exe (keep the data_HarrowsWake folder next to it). On Linux, extract HarrowsWake-Linux.zip and run HarrowsWake.x86_64. README.txt inside has the controls; F11 or Alt+Enter toggles fullscreen.
           files: |
             out/HarrowsWake.apk
             out/HarrowsWake-Windows.zip
+            out/HarrowsWake-Linux.zip
